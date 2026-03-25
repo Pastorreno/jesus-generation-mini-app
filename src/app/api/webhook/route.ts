@@ -26,10 +26,30 @@ export async function POST(req: NextRequest) {
     if (!message) return NextResponse.json({ ok: true });
 
     const chat_id: number = message.chat.id;
+    const chat_type: string = message.chat.type; // private, group, supergroup, channel
+    const user_id: number = message.from?.id;
     const text: string = message.text || "";
     const first_name: string = message.from?.first_name || "Leader";
 
-    // /start command
+    // In groups/supergroups — respond privately to the user, never in the group
+    if (chat_type === "group" || chat_type === "supergroup") {
+      if (text.startsWith("/start") && user_id) {
+        await sendMessage(
+          user_id,
+          `Hi ${first_name}! 👋 Tap below to open your Leadership Dashboard.`,
+          {
+            reply_markup: {
+              inline_keyboard: [[
+                { text: "🔥 Open Leadership Dashboard", web_app: { url: APP_URL } },
+              ]],
+            },
+          }
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // /start command (private chat)
     if (text === "/start" || text.startsWith("/start")) {
       await sendMessage(
         chat_id,
