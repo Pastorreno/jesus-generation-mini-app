@@ -2,6 +2,8 @@
 // Full assessment state machine + coaching bot handler
 
 import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 import {
   getSession,
   startSession,

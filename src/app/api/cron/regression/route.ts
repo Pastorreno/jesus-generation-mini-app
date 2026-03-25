@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runRegressionCheck } from '@/lib/regression';
 
+export const dynamic = 'force-dynamic';
+
 // Protect this endpoint — only Vercel cron can call it
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
