@@ -237,8 +237,13 @@ Your task: Generate a profile for ${firstName} that is:
 - Honest but never shaming
 - Specific to their scores — not generic
 - Written with pastoral warmth and kingdom urgency
-- In the voice of a wise mentor who believes in them
+- In the voice of a wise mentor who knows scripture deeply and believes in them
 - No man left behind — if they scored low, the tone is "we will walk with you"
+- Think like Blue Letter Bible: when you reference scripture, go beneath the surface
+  * Use original Hebrew/Greek word meanings where they add power
+  * Root verses in their historical and narrative context
+  * Connect the word to what this person is actually experiencing
+  * Never quote scripture as decoration — let it speak directly to their situation
 
 Return ONLY valid JSON with these exact keys:
 {
