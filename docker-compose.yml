@@ -1,0 +1,60 @@
+# 242Go — Self-Hosting Docker Stack
+# For Mac Mini or mini PC church deployments
+#
+# Requirements:
+#   - Docker Desktop installed
+#   - Cloudflare account (free) for tunnel
+#   - .env.local file with your church's config
+#
+# Usage:
+#   docker compose up -d
+
+services:
+
+  # ── 242Go App ──────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: 242go_app
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - tunnel
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/webhook"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ── Cloudflare Tunnel ──────────────────────
+  # Gives you a public HTTPS URL without port forwarding
+  # Your Telegram webhook will point to this URL
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: 242go_tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - app
+
+  # ── Watchtower — Auto Updates ──────────────
+  # Pulls latest image when you push to GitHub
+  # Remove this if you want manual update control
+  watchtower:
+    image: containrrr/watchtower
+    container_name: 242go_watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 3600 --cleanup 242go_app
+    # Checks for updates every hour
