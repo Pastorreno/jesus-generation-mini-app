@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://telegram-mini-app-beta-coral.vercel.app";
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const APP_URL = "https://telegram-mini-app-beta-coral.vercel.app";
 
 async function sendMessage(chat_id: number, text: string, extra?: object) {
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+  if (!BOT_TOKEN) {
+    console.error("TELEGRAM_BOT_TOKEN is not set");
+    return;
+  }
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id, text, parse_mode: "Markdown", ...extra }),
   });
+  const data = await res.json();
+  if (!data.ok) {
+    console.error("sendMessage failed:", JSON.stringify(data));
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -108,7 +116,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Telegram verification
 export async function GET() {
-  return NextResponse.json({ ok: true, message: "Jesus Generation webhook active" });
+  return NextResponse.json({
+    ok: true,
+    message: "Jesus Generation webhook active",
+    token_set: !!BOT_TOKEN,
+    token_prefix: BOT_TOKEN ? BOT_TOKEN.substring(0, 8) + "..." : "MISSING",
+  });
 }
