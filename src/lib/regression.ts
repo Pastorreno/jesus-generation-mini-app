@@ -6,12 +6,16 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { sendMessage } from './telegram';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+function getAnthropicClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // Admin Telegram IDs to notify
 const ADMIN_IDS: number[] = process.env.ADMIN_TELEGRAM_IDS
@@ -38,7 +42,7 @@ async function checkMemberRegression(profile: {
 
   // Get recent coaching log entries (last 14 days)
   const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: logs } = await supabase
+  const { data: logs } = await getSupabaseClient()
     .from('coaching_log')
     .select('*')
     .eq('telegram_user_id', telegram_user_id)
@@ -47,7 +51,7 @@ async function checkMemberRegression(profile: {
 
   if (!logs || logs.length === 0) {
     // Check when they were last active at all
-    const { data: anyLogs } = await supabase
+    const { data: anyLogs } = await getSupabaseClient()
       .from('coaching_log')
       .select('sent_at, responded_at')
       .eq('telegram_user_id', telegram_user_id)
@@ -74,7 +78,7 @@ async function checkMemberRegression(profile: {
 
     if (alertLevel) {
       // Check if we already have an open alert for this
-      const { data: existing } = await supabase
+      const { data: existing } = await getSupabaseClient()
         .from('regression_alerts')
         .select('id')
         .eq('telegram_user_id', telegram_user_id)
@@ -101,9 +105,9 @@ async function checkMemberRegression(profile: {
         });
       } else {
         // Escalate if silence has gotten worse
-        await supabase
+        await getSupabaseClient()
           .from('regression_alerts')
-          .update({ weeks_flagged: supabase.rpc as unknown as number }) // increment handled below
+          .update({ weeks_flagged: getSupabaseClient().rpc as unknown as number }) // increment handled below
           .eq('id', existing.id);
       }
     }
@@ -130,7 +134,7 @@ async function analyzeResponseDrift(
 ): Promise<void> {
   // Check for existing unresolved drift alert in last 7 days
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: recentAlert } = await supabase
+  const { data: recentAlert } = await getSupabaseClient()
     .from('regression_alerts')
     .select('id')
     .eq('telegram_user_id', telegram_user_id)
@@ -180,7 +184,7 @@ Return ONLY valid JSON:
 Be conservative — only flag real patterns, not one-off bad days. If uncertain, return drift_detected: false.`;
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await getAnthropicClient().messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 400,
       messages: [{ role: 'user', content: prompt }],
@@ -223,7 +227,7 @@ async function createAlert(data: {
   dimension: string;
   trigger_reason: string;
 }): Promise<void> {
-  await supabase.from('regression_alerts').insert({
+  await getSupabaseClient().from('regression_alerts').insert({
     telegram_user_id: data.telegram_user_id,
     alert_level: data.alert_level,
     dimension: data.dimension,
@@ -234,7 +238,7 @@ async function createAlert(data: {
   // Update profile regression level if escalating
   const levelMap: Record<string, string> = { yellow: 'yellow', orange: 'orange', red: 'red' };
   if (levelMap[data.alert_level]) {
-    await supabase
+    await getSupabaseClient()
       .from('profiles_242go')
       .update({ regression_level: levelMap[data.alert_level] })
       .eq('telegram_user_id', data.telegram_user_id);
@@ -278,7 +282,7 @@ _No man left behind. Someone needs to reach out._`;
 // ─────────────────────────────────────────────
 export async function runRegressionCheck(): Promise<{ checked: number; flagged: number }> {
   // Get all profiles with an active coaching relationship (level 2+)
-  const { data: profiles, error } = await supabase
+  const { data: profiles, error } = await getSupabaseClient()
     .from('profiles_242go')
     .select('telegram_user_id, first_name, level, level_number, bot_mode')
     .gte('level_number', 2) // Seekers don't have coaching cadence yet
@@ -293,7 +297,7 @@ export async function runRegressionCheck(): Promise<{ checked: number; flagged: 
 
   for (const profile of profiles) {
     try {
-      const alertsBefore = await supabase
+      const alertsBefore = await getSupabaseClient()
         .from('regression_alerts')
         .select('id', { count: 'exact' })
         .eq('telegram_user_id', profile.telegram_user_id)
@@ -301,7 +305,7 @@ export async function runRegressionCheck(): Promise<{ checked: number; flagged: 
 
       await checkMemberRegression(profile);
 
-      const alertsAfter = await supabase
+      const alertsAfter = await getSupabaseClient()
         .from('regression_alerts')
         .select('id', { count: 'exact' })
         .eq('telegram_user_id', profile.telegram_user_id)
@@ -326,7 +330,7 @@ export async function resolveAlert(
   telegram_user_id: number,
   notes: string
 ): Promise<void> {
-  await supabase
+  await getSupabaseClient()
     .from('regression_alerts')
     .update({
       resolved: true,
@@ -336,7 +340,7 @@ export async function resolveAlert(
     .eq('telegram_user_id', telegram_user_id)
     .eq('resolved', false);
 
-  await supabase
+  await getSupabaseClient()
     .from('profiles_242go')
     .update({ regression_level: 'none' })
     .eq('telegram_user_id', telegram_user_id);

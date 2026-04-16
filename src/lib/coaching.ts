@@ -6,12 +6,16 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { sendMessage } from './telegram';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+function getAnthropicClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 const ADMIN_IDS: number[] = process.env.ADMIN_TELEGRAM_IDS
   ? process.env.ADMIN_TELEGRAM_IDS.split(',').map(Number)
@@ -23,7 +27,8 @@ type DayType = 'monday_mission' | 'wednesday_checkin' | 'friday_debrief' | 'care
 // GET member context for Claude
 // ─────────────────────────────────────────────
 async function getMemberContext(telegram_user_id: number) {
-  const { data: profile } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await getSupabaseClient()
     .from('profiles_242go')
     .select('*')
     .eq('telegram_user_id', telegram_user_id)
@@ -31,8 +36,11 @@ async function getMemberContext(telegram_user_id: number) {
 
   if (!profile) return null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const p = profile as any;
+
   // Get last 5 coaching responses to personalize
-  const { data: recentLogs } = await supabase
+  const { data: recentLogs } = await getSupabaseClient()
     .from('coaching_log')
     .select('day_type, message_text, response_text, sent_at, consistency_signal, character_signal, competency_signal')
     .eq('telegram_user_id', telegram_user_id)
@@ -41,10 +49,11 @@ async function getMemberContext(telegram_user_id: number) {
     .limit(5);
 
   // Get current week number (weeks since assessment)
-  const assessedAt = new Date(profile.assessed_at);
+  const assessedAt = new Date(p.assessed_at);
   const weekNumber = Math.floor((Date.now() - assessedAt.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
 
-  return { profile, recentLogs: recentLogs ?? [], weekNumber };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { profile: p, recentLogs: (recentLogs ?? []) as any[], weekNumber };
 }
 
 // ─────────────────────────────────────────────
@@ -129,7 +138,7 @@ SCRIPTURE RULE — think like Blue Letter Bible (critical):
 
 Return ONLY the message text. No JSON. No labels. Just the message.`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropicClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 300,
     messages: [{ role: 'user', content: prompt }],
@@ -150,7 +159,7 @@ async function sendCoachingMessage(
   await sendMessage(telegram_user_id, message);
 
   // Log it
-  await supabase.from('coaching_log').insert({
+  await getSupabaseClient().from('coaching_log').insert({
     telegram_user_id,
     week_number: weekNumber,
     day_type: dayType,
@@ -187,7 +196,7 @@ export async function checkForCrisis(
   }
 
   // Log as red regression alert
-  await supabase.from('regression_alerts').insert({
+  await getSupabaseClient().from('regression_alerts').insert({
     telegram_user_id,
     alert_level: 'red',
     dimension: 'general',
@@ -206,7 +215,7 @@ export async function recordCoachingResponse(
   response_text: string
 ): Promise<void> {
   // Find the most recent unanswered coaching message
-  const { data: pending } = await supabase
+  const { data: pending } = await getSupabaseClient()
     .from('coaching_log')
     .select('id, message_text, week_number')
     .eq('telegram_user_id', telegram_user_id)
@@ -221,7 +230,7 @@ export async function recordCoachingResponse(
   // Use Claude to extract behavioral signals from the response
   const signals = await extractSignals(response_text);
 
-  await supabase
+  await getSupabaseClient()
     .from('coaching_log')
     .update({
       response_text,
@@ -240,7 +249,7 @@ async function extractSignals(
   response_text: string
 ): Promise<{ consistency: number; character: number; competency: number }> {
   try {
-    const response = await anthropic.messages.create({
+    const response = await getAnthropicClient().messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 100,
       messages: [{
@@ -276,7 +285,7 @@ Return ONLY: {"consistency": N, "character": N, "competency": N}`,
 // ─────────────────────────────────────────────
 export async function runWeeklyCoaching(dayType: DayType): Promise<{ sent: number; failed: number }> {
   // Get all active members
-  const { data: profiles } = await supabase
+  const { data: profiles } = await getSupabaseClient()
     .from('profiles_242go')
     .select('telegram_user_id, level_number, bot_mode')
     .gte('level_number', 1);

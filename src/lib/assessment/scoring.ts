@@ -14,12 +14,16 @@ import {
 } from './questions';
 import type { Answer } from './session';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+function getAnthropicClient() {
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+}
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export interface ScoredProfile {
   telegram_user_id: number;
@@ -289,7 +293,7 @@ PASSAGE 1 — The Welcome ✓
 ━━━━━━━━━━━━━━━━━━━━━━━
 Your 242Go Coach is ready. 👇`;
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropicClient().messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 1500,
     messages: [{ role: 'user', content: prompt }],
@@ -373,7 +377,7 @@ export async function scoreAndSaveProfile(
   };
 
   // Save to Supabase
-  const { error } = await supabase
+  const { error } = await getSupabaseClient()
     .from('profiles_242go')
     .upsert(profile, { onConflict: 'telegram_user_id' });
 
@@ -388,7 +392,7 @@ export async function scoreAndSaveProfile(
 export async function getProfile(
   telegram_user_id: number
 ): Promise<ScoredProfile | null> {
-  const { data } = await supabase
+  const { data } = await getSupabaseClient()
     .from('profiles_242go')
     .select('*')
     .eq('telegram_user_id', telegram_user_id)

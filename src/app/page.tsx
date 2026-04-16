@@ -30,6 +30,23 @@ type TelegramUser = {
   id: number;
 };
 
+type SupabaseProfile = {
+  telegram_user_id: number;
+  first_name?: string;
+  username?: string;
+  overall_score?: number;
+  character_score?: number;
+  competency_score?: number;
+  consistency_score?: number;
+  level?: string;
+  level_number?: number;
+  dominant_animal?: string;
+  ministry_placement?: string;
+  calling_direction?: string;
+  strengths?: string;
+  growth_areas?: string;
+};
+
 type Tab = "home" | "watch" | "give" | "prayer" | "calling" | "pipeline" | "assessment" | "resources";
 
 // ─── CALLING ASSESSMENT ──────────────────────────────────────────
@@ -408,6 +425,7 @@ function getScoreColor(pct: number): string {
 export default function Home() {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [member, setMember] = useState<MemberScore | null>(null);
+  const [supabaseProfile, setSupabaseProfile] = useState<SupabaseProfile | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [prayerText, setPrayerText] = useState("");
@@ -418,24 +436,94 @@ export default function Home() {
   const [currentQ, setCurrentQ] = useState(0);
   const [callingAnswers, setCallingAnswers] = useState<number[]>([]);
 
-  const isLeader = !!member;
-  const sectionScores = member?.scores ?? { character: 38, competency: 30, ownership: 33, relational: 40 };
+  // A user is a recognized leader/member if they're in members.ts OR have a Supabase profile
+  const isLeader = !!member || !!supabaseProfile;
 
+  // Build sectionScores: prefer live Supabase data, fall back to hardcoded members.ts
+  const sectionScores = (() => {
+    if (supabaseProfile?.character_score != null || supabaseProfile?.competency_score != null) {
+      return {
+        character: supabaseProfile.character_score ?? 0,
+        competency: supabaseProfile.competency_score ?? 0,
+        ownership: 0,
+        relational: 0,
+      };
+    }
+    return member?.scores ?? { character: 38, competency: 30, ownership: 33, relational: 40 };
+  })();
+
+  // On mount: init Telegram, then fetch Supabase profile
   useEffect(() => {
+    let telegramUser: TelegramUser;
+
     const tg = (window as any).Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
-      const telegramUser = tg.initDataUnsafe?.user;
-      if (telegramUser) {
+      const tgUser = tg.initDataUnsafe?.user;
+      if (tgUser) {
+        telegramUser = tgUser;
+        setUser(tgUser);
+        // members.ts fallback — still check hardcoded list
+        setMember(findMember(tgUser.username));
+      } else {
+        telegramUser = { first_name: "Mareneo", username: "Pastor_Reno", id: 1306732735 };
         setUser(telegramUser);
-        setMember(findMember(telegramUser.username));
-        return;
+        setMember(findMember("Pastor_Reno"));
       }
+    } else {
+      telegramUser = { first_name: "Mareneo", username: "Pastor_Reno", id: 1306732735 };
+      setUser(telegramUser);
+      setMember(findMember("Pastor_Reno"));
     }
-    setUser({ first_name: "Mareneo", username: "Pastor_Reno", id: 1306732735 });
-    setMember(findMember("Pastor_Reno"));
+
+    // Fetch Supabase profile using Telegram ID
+    if (telegramUser?.id) {
+      fetch(`/api/profile?telegram_id=${telegramUser.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.profile) {
+            setSupabaseProfile(data.profile);
+          }
+        })
+        .catch(() => {
+          // Silently ignore — members.ts fallback still active
+        });
+    }
   }, []);
+
+  // When calling assessment completes, save result to Supabase
+  useEffect(() => {
+    if (callingStep !== "result" || !user) return;
+    const callingTotal = callingAnswers.reduce((a, b) => a + b, 0);
+    const callingPct = Math.round((callingTotal / (CALLING_QUESTIONS.length * 4)) * 100);
+
+    fetch("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        telegram_id: user.id,
+        first_name: user.first_name,
+        username: user.username,
+        calling_score: callingPct,
+        // Include pipeline scores if available from members.ts
+        ...(member?.scores ? { scores: member.scores } : {}),
+      }),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        // Refresh the profile after saving
+        return fetch(`/api/profile?telegram_id=${user.id}`);
+      })
+      .then((res) => res?.json())
+      .then((data) => {
+        if (data?.profile) setSupabaseProfile(data.profile);
+      })
+      .catch(() => {
+        // Silently ignore save errors — result still shown locally
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [callingStep]);
 
   const overallScore = Math.round(
     Object.values(sectionScores).reduce((a, b) => a + b, 0) / (50 * 4) * 100
@@ -910,16 +998,25 @@ export default function Home() {
               })}
             </div>
 
-            {member?.calling && (
+            {(member?.calling || supabaseProfile?.calling_direction) && (
               <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 16, padding: 20, marginBottom: 20 }}>
                 <p style={{ color: "#666", fontSize: 11, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Your Calling</p>
-                <p style={{ color: "#ccc", fontSize: 14, margin: 0, lineHeight: 1.6 }}>✝️ {member.calling}</p>
+                <p style={{ color: "#ccc", fontSize: 14, margin: 0, lineHeight: 1.6 }}>✝️ {supabaseProfile?.calling_direction || member?.calling}</p>
+              </div>
+            )}
+
+            {supabaseProfile?.ministry_placement && (
+              <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                <p style={{ color: "#666", fontSize: 11, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>Ministry Placement</p>
+                <p style={{ color: "#ccc", fontSize: 14, margin: 0, lineHeight: 1.6 }}>{supabaseProfile.ministry_placement}</p>
               </div>
             )}
 
             <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 16, padding: 20 }}>
               <p style={{ color: "#666", fontSize: 11, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 1 }}>Focus Areas for Growth</p>
-              {(member?.growth
+              {(supabaseProfile?.growth_areas
+                ? supabaseProfile.growth_areas.split(/\n|(?<=\.)(?=\s*\d\.)|(?<=\.)(?=\s[A-Z])/).filter((s) => s.trim())
+                : member?.growth
                 ? member.growth.split(/\n|(?<=\.)(?=\s*\d\.)|(?<=\.)(?=\s[A-Z])/).filter((s) => s.trim())
                 : ["Deepen spiritual disciplines (prayer, fasting, Bible study)", "Build boldness in sharing the Gospel", "Invest in personal development & training"]
               ).map((area, i, arr) => (

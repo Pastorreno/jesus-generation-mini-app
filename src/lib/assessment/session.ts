@@ -4,10 +4,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { TOTAL_QUESTIONS } from './questions';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export type SessionState =
   | 'idle'
@@ -39,7 +41,7 @@ export interface AssessmentSession {
 export async function getSession(
   telegram_user_id: number
 ): Promise<AssessmentSession | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('assessment_sessions')
     .select('*')
     .eq('telegram_user_id', telegram_user_id)
@@ -60,13 +62,13 @@ export async function startSession(
   username: string | null
 ): Promise<AssessmentSession> {
   // Delete any existing incomplete session
-  await supabase
+  await getSupabaseClient()
     .from('assessment_sessions')
     .delete()
     .eq('telegram_user_id', telegram_user_id)
     .neq('state', 'complete');
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('assessment_sessions')
     .insert({
       telegram_user_id,
@@ -89,7 +91,7 @@ export async function startSession(
 export async function confirmStart(
   telegram_user_id: number
 ): Promise<AssessmentSession> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('assessment_sessions')
     .update({ state: 'in_assessment', current_question: 1 })
     .eq('telegram_user_id', telegram_user_id)
@@ -120,7 +122,7 @@ export async function recordAnswer(
   const nextQuestion = isComplete ? question_number : question_number + 1;
   const newState: SessionState = isComplete ? 'processing' : 'in_assessment';
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabaseClient()
     .from('assessment_sessions')
     .update({
       answers: newAnswers,
@@ -142,7 +144,7 @@ export async function recordAnswer(
 export async function markComplete(
   telegram_user_id: number
 ): Promise<void> {
-  await supabase
+  await getSupabaseClient()
     .from('assessment_sessions')
     .update({ state: 'complete' })
     .eq('telegram_user_id', telegram_user_id);
@@ -154,7 +156,7 @@ export async function markComplete(
 export async function resetSession(
   telegram_user_id: number
 ): Promise<void> {
-  await supabase
+  await getSupabaseClient()
     .from('assessment_sessions')
     .delete()
     .eq('telegram_user_id', telegram_user_id);
