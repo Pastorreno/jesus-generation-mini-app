@@ -2,6 +2,7 @@
 // Full assessment state machine + coaching bot handler
 
 import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
 
 export const dynamic = 'force-dynamic';
 import {
@@ -29,11 +30,12 @@ import {
   sendGroupRedirect,
   sendMessage,
 } from '@/lib/telegram';
+import { getRole, setRole, ensureVisitor, hasRole, type BotRole } from '@/lib/roles';
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://telegram-mini-app-beta-coral.vercel.app';
 
-// Admin Telegram user IDs who can use /reset and /admin commands
+// Admin Telegram user IDs — ultimate override, always treated as admin
 const ADMIN_IDS: number[] = process.env.ADMIN_TELEGRAM_IDS
   ? process.env.ADMIN_TELEGRAM_IDS.split(',').map(Number)
   : [];
@@ -51,12 +53,13 @@ export async function POST(req: NextRequest) {
     const first_name: string = message.from?.first_name || 'Leader';
     const username: string | null = message.from?.username ?? null;
 
-    // ── PHOTO UPLOAD ───────────────────────────────────────
+    // ── PHOTO UPLOAD + VISION ──────────────────────────────
     if (message.photo && message.photo.length > 0) {
-      const photo = message.photo[message.photo.length - 1]; // highest resolution
+      const photo = message.photo[message.photo.length - 1];
       const file_id: string = photo.file_id;
+      const caption: string = (message.caption || '').trim();
 
-      // Save file_id to their profile
+      // Save as profile avatar
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,10 +70,37 @@ export async function POST(req: NextRequest) {
         .update({ avatar_file_id: file_id })
         .eq('telegram_user_id', user_id);
 
-      await sendMessage(
-        chat_id,
-        `✅ Got it, ${first_name}! Your profile photo has been saved.`
-      );
+      // Analyze with Claude Vision
+      try {
+        await sendMessage(chat_id, `🔍 Analyzing...`);
+        const fileRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${file_id}`);
+        const fileData = await fileRes.json() as { result: { file_path: string } };
+        const filePath = fileData.result.file_path;
+
+        const imgRes = await fetch(`https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`);
+        const imgBuffer = await imgRes.arrayBuffer();
+        const base64 = Buffer.from(imgBuffer).toString('base64');
+        const mediaType = filePath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const aiRes = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+              { type: 'text', text: caption || 'What is in this image? Describe it clearly and concisely.' },
+            ],
+          }],
+        });
+        const reply = aiRes.content[0].type === 'text' ? aiRes.content[0].text : 'Unable to analyze image.';
+        await sendMessage(chat_id, reply);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Vision error:', msg);
+        await sendMessage(chat_id, `✅ Photo saved! (Vision analysis unavailable: ${msg.slice(0, 100)})`);
+      }
       return NextResponse.json({ ok: true });
     }
 
@@ -82,55 +112,221 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── ADMIN COMMANDS ─────────────────────────────────────
-    if (ADMIN_IDS.includes(user_id)) {
-      // /reset @username or /reset <user_id>
-      if (text.startsWith('/reset')) {
-        const parts = text.split(' ');
-        const target = parts[1];
-        if (target && !isNaN(Number(target))) {
-          await resetSession(Number(target));
-          await sendMessage(chat_id, `✅ Session reset for user ${target}.`);
-        } else {
-          await sendMessage(chat_id, `Usage: /reset <telegram_user_id>`);
-        }
-        return NextResponse.json({ ok: true });
-      }
+    // ── RESOLVE ROLE ───────────────────────────────────────
+    // Admins in env var are always admin regardless of DB
+    const isEnvAdmin = ADMIN_IDS.includes(user_id);
+    const userRole: BotRole = isEnvAdmin ? 'admin' : await ensureVisitor(user_id, first_name, username);
 
-      // /admin — show admin panel link
-      if (text === '/admin') {
-        await sendMessage(
-          chat_id,
-          `🔧 *242Go Admin*\n\nOpen the admin dashboard to view all profiles, flag reviews, and manage the pipeline.`,
-          {
-            reply_markup: {
-              inline_keyboard: [[
-                { text: '🔧 Admin Dashboard', web_app: { url: `${APP_URL}?admin=true` } },
-              ]],
-            },
-          }
+    // ── ADMIN: personal assistant (free-form messages) ─────
+    if (userRole === 'admin' && text && !text.startsWith('/')) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
-        return NextResponse.json({ ok: true });
-      }
-    }
 
-    // ── /start ─────────────────────────────────────────────
-    if (text === '/start' || text.startsWith('/start ')) {
-      // Check if they already have a complete profile
-      const existingProfile = await getProfile(user_id);
-      if (existingProfile) {
-        await sendAlreadyAssessed(chat_id, first_name, existingProfile.level, existingProfile.level_number);
-        return NextResponse.json({ ok: true });
-      }
+        // Load last 20 messages for context
+        const { data: history } = await supabase
+          .from('conversation_history')
+          .select('role, content')
+          .eq('telegram_user_id', user_id)
+          .order('created_at', { ascending: false })
+          .limit(20);
 
-      // Start or restart their session
-      await startSession(user_id, first_name, username);
-      await sendWelcome(chat_id, first_name);
+        const pastMessages = (history ?? []).reverse().map(r => ({
+          role: r.role as 'user' | 'assistant',
+          content: r.content,
+        }));
+
+        // Save the user message
+        await supabase.from('conversation_history').insert({
+          telegram_user_id: user_id,
+          role: 'user',
+          content: text,
+        });
+
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: `You are a personal assistant for Pastorreno, founder of GGI Hub — an AI solutions company focused on churches, ministries, and businesses. You help him think through ideas, answer questions, and get things done. Be concise, direct, and practical. You know he's a non-developer building real products. Today's date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`,
+          messages: [...pastMessages, { role: 'user', content: text }],
+        });
+        const reply = response.content[0].type === 'text' ? response.content[0].text : 'Sorry, I could not generate a response.';
+
+        // Save the assistant reply
+        await supabase.from('conversation_history').insert({
+          telegram_user_id: user_id,
+          role: 'assistant',
+          content: reply,
+        });
+
+        await sendMessage(chat_id, reply);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Assistant error:', msg);
+        await sendMessage(chat_id, `⚠️ Error: ${msg.slice(0, 200)}`);
+      }
       return NextResponse.json({ ok: true });
     }
 
-    // ── /dashboard ─────────────────────────────────────────
+    // ── /local — admin only, routes to local Ollama via ngrok ─
+    if (text.startsWith('/local')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission to use that command.`);
+        return NextResponse.json({ ok: true });
+      }
+      const question = text.replace('/local', '').trim();
+      if (!question) {
+        await sendMessage(chat_id, `🖥️ *Local AI*\n\nSend a prompt after the command.\n\nExample: /local summarize John chapter 3`);
+        return NextResponse.json({ ok: true });
+      }
+      const localUrl = process.env.LOCAL_AI_URL;
+      if (!localUrl) {
+        await sendMessage(chat_id, `⚠️ LOCAL_AI_URL is not configured.`);
+        return NextResponse.json({ ok: true });
+      }
+      try {
+        await sendMessage(chat_id, `⏳ Asking your local AI...`);
+        const res = await fetch(`${localUrl}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': '1' },
+          body: JSON.stringify({ model: 'phi4-mini', prompt: question, stream: false }),
+        });
+        if (!res.ok) throw new Error(`Ollama returned ${res.status}`);
+        const json = await res.json() as { response?: string };
+        const reply = json.response?.trim() || 'No response from local AI.';
+        await sendMessage(chat_id, `🖥️ *Local AI:*\n\n${reply}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Local AI error:', msg);
+        await sendMessage(chat_id, `⚠️ Local AI error: ${msg.slice(0, 200)}\n\nMake sure ngrok is running on your Mac.`);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /bible — available to all roles ───────────────────
+    if (text.startsWith('/bible')) {
+      const question = text.replace('/bible', '').trim();
+      if (!question) {
+        await sendMessage(
+          chat_id,
+          `📖 *Bible Buddies*\n\n_Deep Truth. Real Talk._\n\nSend a verse, topic, or question after the command.\n\nExample: /bible What does the Bible say about forgiveness?`
+        );
+        return NextResponse.json({ ok: true });
+      }
+      try {
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: `You are a helpful, knowledgeable, and highly accessible Bible study guide called Bible Buddies. You speak in the stylistic vein of Dr. Eric Mason — clear, passionate, doctrinally sound, accessible to new believers yet enriching for seasoned ones.
+
+RULES:
+1. Help the user discover what the Bible ACTUALLY says. Handle practical, theological, and historical questions comprehensively.
+2. Use plain, basic English a brand-new believer can understand. Avoid heavy jargon, but keep theology accurate.
+3. PACING: Do NOT give everything at once. Start with a short, bite-sized response (1-2 short paragraphs max). Give a brief foundational answer with one or two key scriptures.
+4. CROSS-REFERENCING: ALWAYS include 1-2 cross-reference verses that connect to the primary scripture. Briefly explain how they connect.
+5. GOING DEEPER: ALWAYS end your response with an engaging question to invite them to go deeper.
+6. Let the truth of God's Word do the heavy lifting — avoid mere personal opinions.
+7. ALWAYS cite the exact Book, Chapter, and Verse for every scripture referenced.
+8. Format clearly: separate scripture text so it stands out visually.
+9. ALWAYS use the CSB (Christian Standard Bible) translation.
+10. End every response with: "📖 Don't just take my word for it — read the full chapter yourself."`,
+          messages: [{ role: 'user', content: question }],
+        });
+        const reply = response.content[0].type === 'text' ? response.content[0].text : 'Unable to retrieve scriptures at this time.';
+        await sendMessage(chat_id, reply);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Bible mode error:', msg);
+        await sendMessage(chat_id, '⚠️ Unable to retrieve scriptures right now. Try again.');
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /promote — admin only ──────────────────────────────
+    if (text.startsWith('/promote')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission to use that command.`);
+        return NextResponse.json({ ok: true });
+      }
+      // Usage: /promote <user_id> <role>
+      const parts = text.split(' ');
+      const targetId = Number(parts[1]);
+      const newRole = parts[2] as BotRole;
+      const validRoles: BotRole[] = ['visitor', 'member', 'staff', 'admin'];
+
+      if (!targetId || !validRoles.includes(newRole)) {
+        await sendMessage(chat_id, `Usage: /promote <telegram_user_id> <visitor|member|staff|admin>`);
+        return NextResponse.json({ ok: true });
+      }
+
+      await setRole(targetId, '', null, newRole, user_id);
+      await sendMessage(chat_id, `✅ User ${targetId} has been promoted to *${newRole}*.`);
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /myrole — check your own role ─────────────────────
+    if (text === '/myrole') {
+      const role = await getRole(user_id);
+      const roleEmoji: Record<BotRole, string> = {
+        visitor: '👋',
+        member: '✅',
+        staff: '⭐',
+        admin: '👑',
+      };
+      await sendMessage(
+        chat_id,
+        `${roleEmoji[role]} *Your role:* ${role.charAt(0).toUpperCase() + role.slice(1)}\n\nYour Telegram ID is \`${user_id}\`.`
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /admin — admin only ────────────────────────────────
+    if (text === '/admin') {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission to use that command.`);
+        return NextResponse.json({ ok: true });
+      }
+      await sendMessage(
+        chat_id,
+        `👑 *Admin Panel*\n\n*Role commands:*\n/promote <id> <role> — change a user's role\n/myrole — check your role\n/reset <id> — reset assessment\n\n*AI commands:*\n/local <prompt> — ask your local Mac AI\n\n*Roles:* visitor → member → staff → admin`,
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🔧 Admin Dashboard', web_app: { url: `${APP_URL}?admin=true` } },
+            ]],
+          },
+        }
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /reset — admin only ────────────────────────────────
+    if (text.startsWith('/reset')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission to use that command.`);
+        return NextResponse.json({ ok: true });
+      }
+      const parts = text.split(' ');
+      const target = parts[1];
+      if (target && !isNaN(Number(target))) {
+        await resetSession(Number(target));
+        await sendMessage(chat_id, `✅ Session reset for user ${target}.`);
+      } else {
+        await sendMessage(chat_id, `Usage: /reset <telegram_user_id>`);
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /dashboard — member+ ───────────────────────────────
     if (text === '/dashboard') {
+      if (!hasRole(userRole, 'member')) {
+        await sendMessage(chat_id, `Complete your leadership assessment first to unlock your dashboard. Send /start to begin.`);
+        return NextResponse.json({ ok: true });
+      }
       await sendMessage(
         chat_id,
         `📊 *Your 242Go Dashboard*\n\nTap below to view your leadership profile, pipeline scores, and coaching resources.`,
@@ -145,8 +341,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── /prayer ────────────────────────────────────────────
+    // ── /prayer — member+ ──────────────────────────────────
     if (text === '/prayer') {
+      if (!hasRole(userRole, 'member')) {
+        await sendMessage(chat_id, `Complete your leadership assessment first. Send /start to begin.`);
+        return NextResponse.json({ ok: true });
+      }
       await sendMessage(
         chat_id,
         `🙏 *Submit a Prayer Request*\n\nOpen your dashboard and tap the Prayer tab to submit your request to the leadership team.`,
@@ -161,8 +361,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── /resources ─────────────────────────────────────────
+    // ── /resources — member+ ───────────────────────────────
     if (text === '/resources') {
+      if (!hasRole(userRole, 'member')) {
+        await sendMessage(chat_id, `Complete your leadership assessment first. Send /start to begin.`);
+        return NextResponse.json({ ok: true });
+      }
       await sendMessage(
         chat_id,
         `📚 *Leadership Resources*\n\nAccess your training materials, guides, and tools inside the dashboard.`,
@@ -177,14 +381,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── STATE MACHINE — get current session ────────────────
+    // ── /start ─────────────────────────────────────────────
+    if (text === '/start' || text.startsWith('/start ')) {
+      const existingProfile = await getProfile(user_id);
+      if (existingProfile) {
+        await sendAlreadyAssessed(chat_id, first_name, existingProfile.level, existingProfile.level_number);
+        return NextResponse.json({ ok: true });
+      }
+      await startSession(user_id, first_name, username);
+      await sendWelcome(chat_id, first_name);
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── STATE MACHINE ──────────────────────────────────────
     const session = await getSession(user_id);
 
-    // No session + no /start — prompt them
     if (!session) {
       await sendMessage(
         chat_id,
-        `👋 Hi ${first_name}! Send /start to begin your 242Go Leadership Assessment, or tap below to open your dashboard.`,
+        `👋 Hi ${first_name}! Send /start to begin your 242Go Leadership Assessment.\n\nAvailable commands:\n/bible — Bible study\n/myrole — Check your access level`,
         {
           reply_markup: {
             inline_keyboard: [[
@@ -196,7 +411,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── STATE: awaiting_start ──────────────────────────────
     if (session.state === 'awaiting_start') {
       const normalized = text.toLowerCase();
       if (
@@ -207,7 +421,6 @@ export async function POST(req: NextRequest) {
       ) {
         await confirmStart(user_id);
         await sendAssessmentStart(chat_id, first_name);
-        // Small delay then send Q1
         await new Promise(r => setTimeout(r, 1000));
         await sendQuestion(chat_id, 1);
       } else {
@@ -226,73 +439,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── STATE: in_assessment ───────────────────────────────
     if (session.state === 'in_assessment') {
       const answer = parseAnswer(text);
-
       if (!answer) {
         await sendInvalidAnswer(chat_id, session.current_question);
         return NextResponse.json({ ok: true });
       }
 
-      // Record the answer
-      const { session: updated, isComplete } = await recordAnswer(
-        user_id,
-        session.current_question,
-        answer
-      );
+      const { session: updated, isComplete } = await recordAnswer(user_id, session.current_question, answer);
 
       if (isComplete) {
-        // Send processing message
         await sendProcessingMessage(chat_id, first_name);
-
-        // Score and save profile (calls Claude API + Supabase)
-        const profile = await scoreAndSaveProfile(
-          user_id,
-          first_name,
-          username,
-          updated.answers
-        );
-
-        // Sync to Notion CRM (non-blocking on error)
-        syncProfileToNotion(profile).catch(err =>
-          console.error('Notion sync error:', err)
-        );
-
-        // Mark session complete
+        const profile = await scoreAndSaveProfile(user_id, first_name, username, updated.answers);
+        syncProfileToNotion(profile).catch(err => console.error('Notion sync error:', err));
         await markComplete(user_id);
-
-        // Send profile result
+        // Auto-promote to member on assessment completion
+        await setRole(user_id, first_name, username, 'member', user_id);
         await sendProfileResult(chat_id, profile);
-
       } else {
-        // Send progress checkpoint if milestone
         if (updated.current_question === 11 || updated.current_question === 21) {
           await sendProgressMessage(chat_id, updated.current_question - 1);
           await new Promise(r => setTimeout(r, 500));
         }
-
-        // Send next question
         await sendQuestion(chat_id, updated.current_question);
       }
-
       return NextResponse.json({ ok: true });
     }
 
-    // ── STATE: processing ──────────────────────────────────
     if (session.state === 'processing') {
-      await sendMessage(
-        chat_id,
-        `⏳ Your profile is still being generated. This only takes a moment — hang tight, ${first_name}!`
-      );
+      await sendMessage(chat_id, `⏳ Your profile is still being generated. Hang tight, ${first_name}!`);
       return NextResponse.json({ ok: true });
     }
 
-    // ── STATE: complete — handle ongoing coaching responses ──
     if (session.state === 'complete') {
-      // If they typed something, it's a response to a coaching message
       if (text && !text.startsWith('/')) {
-        // Crisis check runs first — always
         const isCrisis = await checkForCrisis(user_id, first_name, text);
         if (isCrisis) {
           await sendMessage(
@@ -301,21 +481,17 @@ export async function POST(req: NextRequest) {
           );
           return NextResponse.json({ ok: true });
         }
-
         await recordCoachingResponse(user_id, text);
-        // Simple acknowledgment — coaching reply comes from scheduled messages
         const acks = [
           `🙏 Got it, ${first_name}. Keep pushing.`,
           `✅ Logged. Your coach sees you, ${first_name}.`,
           `💪 Received. Stay the course, ${first_name}.`,
           `🔥 That's real. Your coach has noted it.`,
         ];
-        const ack = acks[Math.floor(Math.random() * acks.length)];
-        await sendMessage(chat_id, ack);
+        await sendMessage(chat_id, acks[Math.floor(Math.random() * acks.length)]);
         return NextResponse.json({ ok: true });
       }
 
-      // Commands or re-opens
       const profile = await getProfile(user_id);
       if (profile) {
         await sendAlreadyAssessed(chat_id, first_name, profile.level, profile.level_number);
@@ -335,12 +511,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Fallback
     return NextResponse.json({ ok: true });
 
   } catch (err) {
     console.error('Webhook error:', err);
-    // Try to send error message if we have a chat_id
     try {
       const body = await (req as NextRequest & { _body?: unknown })._body;
       if (body) {
@@ -359,6 +533,6 @@ export async function GET() {
     ok: true,
     message: '242Go Leadership Pipeline webhook active',
     token_set: !!BOT_TOKEN,
-    version: '1.0.0',
+    version: '2.0.0',
   });
 }

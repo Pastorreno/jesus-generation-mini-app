@@ -430,6 +430,7 @@ export default function Home() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [prayerText, setPrayerText] = useState("");
   const [prayerSubmitted, setPrayerSubmitted] = useState(false);
+  const [jsError, setJsError] = useState<string | null>(null);
 
   // Calling Assessment state
   const [callingStep, setCallingStep] = useState<"intro" | "questions" | "result">("intro");
@@ -464,7 +465,6 @@ export default function Home() {
       if (tgUser) {
         telegramUser = tgUser;
         setUser(tgUser);
-        // members.ts fallback — still check hardcoded list
         setMember(findMember(tgUser.username));
       } else {
         telegramUser = { first_name: "Mareneo", username: "Pastor_Reno", id: 1306732735 };
@@ -556,6 +556,15 @@ export default function Home() {
   const callingTotal = callingAnswers.reduce((a, b) => a + b, 0);
   const callingPct = Math.round((callingTotal / (CALLING_QUESTIONS.length * 4)) * 100);
   const callingResult = getCallingTier(callingPct);
+
+  if (jsError) {
+    return (
+      <div style={{ background: "#0a0a0a", minHeight: "100vh", padding: 20, color: "#fff" }}>
+        <h2 style={{ color: "#cc0000" }}>JS Error</h2>
+        <p style={{ fontFamily: "monospace", fontSize: 13, color: "#ff6666" }}>{jsError}</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh", display: "flex", flexDirection: "column", maxWidth: 480, margin: "0 auto" }}>
