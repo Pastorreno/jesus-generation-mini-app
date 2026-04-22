@@ -162,11 +162,11 @@ export async function POST(req: NextRequest) {
           content: reply,
         });
 
-        await sendMessage(chat_id, reply);
+        await sendMessage(chat_id, reply, { parse_mode: null });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('Assistant error:', msg);
-        await sendMessage(chat_id, `⚠️ Error: ${msg.slice(0, 200)}`);
+        await sendMessage(chat_id, `⚠️ Error: ${msg.slice(0, 200)}`, { parse_mode: null });
       }
       return NextResponse.json({ ok: true });
     }
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
         if (!res.ok) throw new Error(`Ollama returned ${res.status}`);
         const json = await res.json() as { response?: string };
         const reply = json.response?.trim() || 'No response from local AI.';
-        await sendMessage(chat_id, `🖥️ *Local AI:*\n\n${reply}`);
+        await sendMessage(chat_id, `🖥️ Local AI:\n\n${reply}`, { parse_mode: null });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('Local AI error:', msg);
@@ -237,7 +237,7 @@ RULES:
           messages: [{ role: 'user', content: question }],
         });
         const reply = response.content[0].type === 'text' ? response.content[0].text : 'Unable to retrieve scriptures at this time.';
-        await sendMessage(chat_id, reply);
+        await sendMessage(chat_id, reply, { parse_mode: null });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.error('Bible mode error:', msg);
@@ -514,16 +514,7 @@ RULES:
     return NextResponse.json({ ok: true });
 
   } catch (err) {
-    console.error('Webhook error:', err);
-    try {
-      const body = await (req as NextRequest & { _body?: unknown })._body;
-      if (body) {
-        const chat_id = (body as { message?: { chat?: { id?: number } } })?.message?.chat?.id;
-        if (chat_id) await sendErrorMessage(chat_id);
-      }
-    } catch {
-      // silent
-    }
+    console.error('Webhook error:', err instanceof Error ? err.message : String(err));
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }

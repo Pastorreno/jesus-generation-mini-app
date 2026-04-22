@@ -13,18 +13,40 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://telegram-mini-app-be
 export async function sendMessage(
   chat_id: number,
   text: string,
-  extra?: object
+  extra?: Record<string, unknown>
 ): Promise<void> {
   if (!BOT_TOKEN) {
     console.error('TELEGRAM_BOT_TOKEN is not set');
     return;
   }
-  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id, text, parse_mode: 'Markdown', ...extra }),
-  });
-  const data = await res.json();
+  // Allow callers to override or disable parse_mode.
+  // Pass `{ parse_mode: null }` to send as plain text (safe for Claude-generated content).
+  const { parse_mode, ...rest } = extra ?? {};
+  const effectiveParseMode =
+    parse_mode === null ? undefined : (parse_mode ?? 'Markdown');
+
+  const payload: Record<string, unknown> = { chat_id, text, ...rest };
+  if (effectiveParseMode) payload.parse_mode = effectiveParseMode;
+
+  const doSend = async (body: Record<string, unknown>) => {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    return res.json();
+  };
+
+  let data = await doSend(payload);
+
+  // Fallback: if markdown parse failed, retry as plain text so the user still gets the message.
+  if (!data.ok && effectiveParseMode === 'Markdown') {
+    console.error('sendMessage failed (markdown):', JSON.stringify(data));
+    const plainPayload = { ...payload };
+    delete plainPayload.parse_mode;
+    data = await doSend(plainPayload);
+  }
+
   if (!data.ok) {
     console.error('sendMessage failed:', JSON.stringify(data));
   }
