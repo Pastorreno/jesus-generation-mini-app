@@ -1,10 +1,12 @@
 // Bot role system — controls what each user can access
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export type BotRole = 'visitor' | 'member' | 'staff' | 'admin';
 
@@ -20,7 +22,7 @@ export function hasRole(userRole: BotRole, required: BotRole): boolean {
 }
 
 export async function getRole(telegram_user_id: number): Promise<BotRole> {
-  const { data } = await supabase
+  const { data } = await getSupabaseClient()
     .from('bot_roles')
     .select('role')
     .eq('telegram_user_id', telegram_user_id)
@@ -35,7 +37,7 @@ export async function setRole(
   role: BotRole,
   promoted_by: number
 ): Promise<void> {
-  await supabase.from('bot_roles').upsert({
+  await getSupabaseClient().from('bot_roles').upsert({
     telegram_user_id,
     first_name,
     username,
@@ -50,14 +52,14 @@ export async function ensureVisitor(
   first_name: string,
   username: string | null
 ): Promise<BotRole> {
-  const { data } = await supabase
+  const { data } = await getSupabaseClient()
     .from('bot_roles')
     .select('role')
     .eq('telegram_user_id', telegram_user_id)
     .single();
 
   if (!data) {
-    await supabase.from('bot_roles').insert({
+    await getSupabaseClient().from('bot_roles').insert({
       telegram_user_id,
       first_name,
       username,

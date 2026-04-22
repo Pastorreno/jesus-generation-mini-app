@@ -4,10 +4,13 @@
 import { Client } from '@notionhq/client';
 import type { ScoredProfile } from './assessment/scoring';
 
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
+function getNotionClient() {
+  return new Client({ auth: process.env.NOTION_API_KEY });
+}
 
-// Jesus Generation Database ID
-const DATABASE_ID = process.env.NOTION_DATABASE_ID!;
+function getDatabaseId() {
+  return process.env.NOTION_DATABASE_ID!;
+}
 
 // Animal display names with emoji
 const ANIMAL_DISPLAY: Record<string, string> = {
@@ -30,8 +33,8 @@ const LEVEL_EMOJI: Record<string, string> = {
 // ─────────────────────────────────────────────
 async function findNotionPage(telegram_user_id: number): Promise<string | null> {
   try {
-    const response = await notion.dataSources.query({
-      data_source_id: DATABASE_ID,
+    const response = await getNotionClient().dataSources.query({
+      data_source_id: getDatabaseId(),
       filter: {
         property: 'Telegram ID',
         number: { equals: telegram_user_id },
@@ -213,12 +216,13 @@ function buildContent(profile: ScoredProfile) {
 // SYNC profile to Notion — create or update
 // ─────────────────────────────────────────────
 export async function syncProfileToNotion(profile: ScoredProfile): Promise<void> {
-  if (!process.env.NOTION_API_KEY || !DATABASE_ID) {
+  if (!process.env.NOTION_API_KEY || !process.env.NOTION_DATABASE_ID) {
     console.warn('Notion sync skipped — NOTION_API_KEY or NOTION_DATABASE_ID not set');
     return;
   }
 
   try {
+    const notion = getNotionClient();
     const existingPageId = await findNotionPage(profile.telegram_user_id);
     const properties = buildProperties(profile);
 
@@ -251,7 +255,7 @@ export async function syncProfileToNotion(profile: ScoredProfile): Promise<void>
       // Create new page
       const content = buildContent(profile);
       await notion.pages.create({
-        parent: { database_id: DATABASE_ID },
+        parent: { database_id: getDatabaseId() },
         properties: properties as Parameters<typeof notion.pages.create>[0]['properties'],
         children: content.length > 0
           ? content as Parameters<typeof notion.pages.create>[0]['children']
