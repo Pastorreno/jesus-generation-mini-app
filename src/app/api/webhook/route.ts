@@ -31,6 +31,7 @@ import {
   sendErrorMessage,
   sendGroupRedirect,
   sendMessage,
+  sendToChannel,
 } from '@/lib/telegram';
 import { getRole, setRole, ensureVisitor, hasRole, type BotRole } from '@/lib/roles';
 
@@ -45,6 +46,57 @@ const ADMIN_IDS: number[] = process.env.ADMIN_TELEGRAM_IDS
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // ── BOT PROMOTED/DEMOTED in a chat (channels, groups) ──
+    // Notify admins with the chat id so they can wire it to env vars.
+    const myChatMember = body?.my_chat_member;
+    if (myChatMember) {
+      const newStatus: string = myChatMember.new_chat_member?.status;
+      const oldStatus: string = myChatMember.old_chat_member?.status;
+      const chat = myChatMember.chat;
+      if (
+        chat &&
+        newStatus === 'administrator' &&
+        oldStatus !== 'administrator'
+      ) {
+        const title: string = chat.title || '(untitled)';
+        const chatType: string = chat.type;
+        const chatId: number = chat.id;
+        for (const adminId of ADMIN_IDS) {
+          await sendMessage(
+            adminId,
+            `✅ *I'm now an admin in:*\n\n*${title}*\nType: ${chatType}\nID: \`${chatId}\`\n\n*To make this your ETS Academy channel:*\n1. Run in terminal:\n\`\`\`\nvercel env add TELEGRAM_ETS_CHANNEL_ID production\n\`\`\`\n2. Paste this ID: \`${chatId}\`\n3. Redeploy: \`vercel --prod\`\n\nThen test with: \`/announce Welcome to ETS Academy!\``,
+          );
+        }
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── NEW MEMBER JOINS ETS ACADEMY CHANNEL ──────────────
+    const chatMember = body?.chat_member;
+    if (chatMember) {
+      const newStatus: string = chatMember.new_chat_member?.status;
+      const isNewMember = newStatus === 'member' || newStatus === 'subscriber';
+      const etsChannelId = process.env.TELEGRAM_ETS_CHANNEL_ID;
+      const chatId: number = chatMember.chat?.id;
+      if (isNewMember && etsChannelId && String(chatId) === etsChannelId) {
+        const newUser = chatMember.new_chat_member?.user;
+        const newName: string = newUser?.first_name ?? 'Leader';
+        await sendToChannel(
+          `👋 Welcome, *${newName}*!\n\nTake your Kingdom Mandate Assessment to get your leadership profile and unlock your 90-day growth plan.\n\n👇 Tap below to begin:`,
+          undefined,
+          {
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '📋 Take the Assessment', url: `https://t.me/leadershippipelinebot?start=ets` },
+              ]],
+            },
+          }
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     const message = body?.message;
     if (!message) return NextResponse.json({ ok: true });
 
@@ -407,6 +459,40 @@ RULES:
       return NextResponse.json({ ok: true });
     }
 
+    // ── /announce — admin only, posts to ETS Academy channel ──
+    if (text.startsWith('/announce')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission to use that command.`);
+        return NextResponse.json({ ok: true });
+      }
+      const announcement = text.replace(/^\/announce(@\w+)?\s*/, '').trim();
+      if (!announcement) {
+        await sendMessage(
+          chat_id,
+          `📣 *Announce to ETS Academy*\n\nUsage: /announce <message>\n\nExample:\n/announce New manual dropped this week — Foundation Tier 1 is live.\n\n_Markdown is supported. The post goes straight to the ETS Academy channel._`,
+        );
+        return NextResponse.json({ ok: true });
+      }
+      if (!process.env.TELEGRAM_ETS_CHANNEL_ID) {
+        await sendMessage(
+          chat_id,
+          `⚠️ *ETS channel not configured.*\n\nAdd me as admin to your ETS Academy channel — I'll DM you the ID and setup steps.`,
+        );
+        return NextResponse.json({ ok: true });
+      }
+      const result = await sendToChannel(announcement);
+      if (result.ok) {
+        await sendMessage(chat_id, `✅ Posted to ETS Academy.`);
+      } else {
+        await sendMessage(
+          chat_id,
+          `⚠️ Couldn't post: ${result.error}\n\nMake sure I'm still an admin in the channel and TELEGRAM_ETS_CHANNEL_ID is correct.`,
+          { parse_mode: null },
+        );
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     // ── /promote — admin only ──────────────────────────────
     if (text.startsWith('/promote')) {
       if (!hasRole(userRole, 'admin')) {
@@ -453,7 +539,7 @@ RULES:
       }
       await sendMessage(
         chat_id,
-        `👑 *Admin Panel*\n\n*Role commands:*\n/promote <id> <role> — change a user's role\n/myrole — check your role\n/reset <id> — reset assessment\n\n*AI commands:*\n/local <prompt> — ask your local Mac AI\n\n*Roles:* visitor → member → staff → admin`,
+        `👑 *Admin Panel*\n\n*Role commands:*\n/promote <id> <role> — change a user's role\n/myrole — check your role\n/reset <id> — reset assessment\n\n*Channel commands:*\n/announce <message> — post to ETS Academy channel\n\n*AI commands:*\n/local <prompt> — ask your local Mac AI\n\n*Roles:* visitor → member → staff → admin`,
         {
           reply_markup: {
             inline_keyboard: [[
@@ -573,11 +659,30 @@ RULES:
     if (text === '/start' || text.startsWith('/start ')) {
       const existingProfile = await getProfile(user_id);
       if (existingProfile) {
-        await sendAlreadyAssessed(chat_id, first_name, existingProfile.level, existingProfile.level_number);
+        await sendMessage(
+          chat_id,
+          `👋 Welcome back, *${first_name}*! Your dashboard is ready.`,
+          {
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '📊 Open Dashboard', web_app: { url: APP_URL } },
+              ]],
+            },
+          }
+        );
         return NextResponse.json({ ok: true });
       }
-      await startSession(user_id, first_name, username);
-      await sendWelcome(chat_id, first_name);
+      await sendMessage(
+        chat_id,
+        `👋 Hi *${first_name}*! Welcome to the Leadership Pipeline.\n\nTap below to take your Kingdom Mandate Assessment — it takes about 10 minutes and gives you a personalized leadership profile.`,
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '📋 Take the Assessment', web_app: { url: APP_URL } },
+            ]],
+          },
+        }
+      );
       return NextResponse.json({ ok: true });
     }
 
