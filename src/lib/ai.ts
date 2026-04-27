@@ -1,65 +1,45 @@
-// AI helper — routes through Vercel AI Gateway with automatic provider fallback.
-// On Vercel, auth is handled by OIDC (no API key needed in prod).
-// Locally, set AI_GATEWAY_API_KEY in .env.local.
+// AI helper — calls Google Gemini directly via the Vercel AI SDK.
+// Uses GOOGLE_GENERATIVE_AI_API_KEY (free tier from https://aistudio.google.com/apikey).
+// No Vercel AI Gateway dependency; no credit card required.
 //
-// Strategy: try Anthropic Claude first; on rate-limit / quota / error, fall
-// back to Google Gemini Flash. That way the bot stays alive even when one
-// provider is throttled or you've hit a credit ceiling.
+// To re-add Anthropic later as a fallback, install @ai-sdk/anthropic and wrap
+// tryModel calls in a try/catch that falls back to the secondary provider.
 
 import { generateText, type ModelMessage } from 'ai';
+import { google } from '@ai-sdk/google';
 
 export type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
 export interface ChatOptions {
   system?: string;
   maxTokens?: number;
-  /** Primary model id (gateway "provider/model" string). Default: Claude Sonnet 4.6. */
-  primary?: string;
-  /** Fallback model id. Default: Gemini 2.5 Flash. */
-  fallback?: string;
+  /** Gemini model id. Default: gemini-2.5-flash (fast & cheap, generous free tier). */
+  model?: string;
 }
 
-const DEFAULT_PRIMARY = 'anthropic/claude-sonnet-4-6';
-const DEFAULT_FALLBACK = 'google/gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 /**
- * Generate a chat completion via Vercel AI Gateway with automatic fallback.
+ * Generate a chat completion using Google Gemini.
  * Returns the assistant's text reply.
  */
 export async function chat(
   messages: ChatMessage[],
   options: ChatOptions = {}
 ): Promise<string> {
-  const {
-    system,
-    maxTokens = 1024,
-    primary = DEFAULT_PRIMARY,
-    fallback = DEFAULT_FALLBACK,
-  } = options;
+  const { system, maxTokens = 1024, model = DEFAULT_MODEL } = options;
 
   const modelMessages: ModelMessage[] = messages.map((m) => ({
     role: m.role,
     content: m.content,
   }));
 
-  const tryModel = async (modelId: string): Promise<string> => {
-    const result = await generateText({
-      model: modelId,
-      system,
-      messages: modelMessages,
-      maxOutputTokens: maxTokens,
-    });
-    return result.text;
-  };
+  const result = await generateText({
+    model: google(model),
+    system,
+    messages: modelMessages,
+    maxOutputTokens: maxTokens,
+  });
 
-  try {
-    return await tryModel(primary);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.warn(
-      `AI primary (${primary}) failed, falling back to ${fallback}:`,
-      msg.slice(0, 200)
-    );
-    return await tryModel(fallback);
-  }
+  return result.text;
 }
