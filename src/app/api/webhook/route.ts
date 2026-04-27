@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { chat as aiChat } from '@/lib/ai';
 
 export const dynamic = 'force-dynamic';
 import {
@@ -14,7 +15,8 @@ import {
   resetSession,
   parseAnswer,
 } from '@/lib/assessment/session';
-import { scoreAndSaveProfile, getProfile } from '@/lib/assessment/scoring';
+import { scoreAndSaveProfile, getProfile, generateDevelopmentPlan } from '@/lib/assessment/scoring';
+import { compareGrowth } from '@/lib/regression';
 import { syncProfileToNotion } from '@/lib/notion';
 import { recordCoachingResponse, checkForCrisis } from '@/lib/coaching';
 import {
@@ -119,6 +121,33 @@ export async function POST(req: NextRequest) {
 
     // ── ADMIN: personal assistant (free-form messages) ─────
     if (userRole === 'admin' && text && !text.startsWith('/')) {
+      // Deploy shortcut
+      if (text.toLowerCase().trim() === 'deploy') {
+        const codeServerUrl = process.env.CODE_SERVER_URL;
+        const codeServerSecret = process.env.CODE_SERVER_SECRET || 'mrthomas';
+        if (!codeServerUrl) {
+          await sendMessage(chat_id, `⚠️ Code server not running. Can't auto-deploy.`);
+          return NextResponse.json({ ok: true });
+        }
+        try {
+          await sendMessage(chat_id, `🚀 Deploying to Vercel...`, { parse_mode: null });
+          const res = await fetch(codeServerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-secret': codeServerSecret, 'ngrok-skip-browser-warning': '1' },
+            body: JSON.stringify({ path: '~/.deploy-trigger', content: new Date().toISOString() }),
+          });
+          // Trigger deploy via shell on the local server
+          const deployRes = await fetch(`${codeServerUrl}/deploy`, {
+            headers: { 'x-secret': codeServerSecret, 'ngrok-skip-browser-warning': '1' },
+          });
+          const data = await deployRes.json() as { ok?: boolean; error?: string };
+          if (data.error) throw new Error(data.error);
+          await sendMessage(chat_id, `✅ Deploy triggered. Check Vercel for status.`, { parse_mode: null });
+        } catch {
+          await sendMessage(chat_id, `Run this in terminal:\ncd ~/telegram-mini-app && vercel --prod --yes`, { parse_mode: null });
+        }
+        return NextResponse.json({ ok: true });
+      }
       try {
         const { createClient } = await import('@supabase/supabase-js');
         const supabase = createClient(
@@ -146,14 +175,13 @@ export async function POST(req: NextRequest) {
           content: text,
         });
 
-        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
-          system: `You are a personal assistant for Pastorreno, founder of GGI Hub — an AI solutions company focused on churches, ministries, and businesses. You help him think through ideas, answer questions, and get things done. Be concise, direct, and practical. You know he's a non-developer building real products. Today's date is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`,
-          messages: [...pastMessages, { role: 'user', content: text }],
-        });
-        const reply = response.content[0].type === 'text' ? response.content[0].text : 'Sorry, I could not generate a response.';
+        const reply = await aiChat(
+          [...pastMessages, { role: 'user', content: text }],
+          {
+            system: `You are Mr. Thomas — a senior-level developer, architect, life coach, and all-around straight shooter. You work exclusively for Pastorreno, founder of GGI Hub. You don't sugarcoat, you don't pad answers with filler, and you don't waste his time. You give him the real answer, the best path forward, and call it like it is — whether that's code, strategy, life decisions, or hard truths. You can write and review code at a senior level across any stack. You know his world: AI, churches, ministries, businesses, Telegram bots, Supabase, Next.js, Vercel, Anthropic. Today is ${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.`,
+            maxTokens: 1024,
+          }
+        );
 
         // Save the assistant reply
         await supabase.from('conversation_history').insert({
@@ -206,6 +234,140 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
+    // ── /code — admin only, reads files from your Mac ─────
+    if (text.startsWith('/code')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission.`);
+        return NextResponse.json({ ok: true });
+      }
+      const parts = text.split(' ');
+      const filePath = parts[1];
+      const question = parts.slice(2).join(' ').trim();
+
+      if (!filePath) {
+        await sendMessage(chat_id, `💻 *Mr. Thomas — Code Access*\n\nUsage:\n/code <path> — read a file\n/code <path> <question> — read + ask\n\nExamples:\n/code ~/telegram-mini-app/src/lib/coaching.ts\n/code ~/telegram-mini-app/src/app/api/webhook/route.ts what is the /start flow?`);
+        return NextResponse.json({ ok: true });
+      }
+
+      const codeServerUrl = process.env.CODE_SERVER_URL;
+      const codeServerSecret = process.env.CODE_SERVER_SECRET || 'mrthomas';
+
+      if (!codeServerUrl) {
+        await sendMessage(chat_id, `⚠️ CODE_SERVER_URL not set.\n\n1. Run: node ~/code-server.js\n2. Run: ngrok http 19000\n3. Add CODE_SERVER_URL to Vercel env vars`);
+        return NextResponse.json({ ok: true });
+      }
+
+      try {
+        await sendMessage(chat_id, `🔍 Reading ${filePath}...`, { parse_mode: null });
+        const res = await fetch(`${codeServerUrl}?path=${encodeURIComponent(filePath)}`, {
+          headers: { 'x-secret': codeServerSecret, 'ngrok-skip-browser-warning': '1' },
+        });
+        const data = await res.json() as { type?: string; content?: string; entries?: Array<{name: string; type: string}>; error?: string };
+
+        if (data.error) throw new Error(data.error);
+
+        if (data.type === 'directory') {
+          const listing = (data.entries ?? []).map(e => `${e.type === 'dir' ? '📁' : '📄'} ${e.name}`).join('\n');
+          await sendMessage(chat_id, `📁 *${filePath}*\n\n${listing}`, { parse_mode: null });
+          return NextResponse.json({ ok: true });
+        }
+
+        const fileContent = data.content ?? '';
+
+        if (!question) {
+          // Just show the file (truncated for Telegram's 4096 char limit)
+          const preview = fileContent.slice(0, 3500);
+          await sendMessage(chat_id, `📄 *${filePath}*\n\`\`\`\n${preview}${fileContent.length > 3500 ? '\n...[truncated]' : ''}\n\`\`\``);
+          return NextResponse.json({ ok: true });
+        }
+
+        // Ask Mr. Thomas about the file
+        const reply = await aiChat(
+          [{
+            role: 'user',
+            content: `File: ${filePath}\n\n\`\`\`\n${fileContent.slice(0, 8000)}\n\`\`\`\n\nQuestion: ${question}`,
+          }],
+          {
+            system: `You are Mr. Thomas — senior developer, straight shooter. You're reviewing code for Pastorreno. Be direct, specific, and actionable. No fluff.`,
+            maxTokens: 1500,
+          }
+        );
+        await sendMessage(chat_id, reply, { parse_mode: null });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await sendMessage(chat_id, `⚠️ ${msg}\n\nMake sure code-server.js and ngrok are running on your Mac.`, { parse_mode: null });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── /write — admin only, Mr. Thomas edits files on your Mac ─
+    if (text.startsWith('/write')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission.`);
+        return NextResponse.json({ ok: true });
+      }
+
+      const codeServerUrl = process.env.CODE_SERVER_URL;
+      const codeServerSecret = process.env.CODE_SERVER_SECRET || 'mrthomas';
+
+      if (!codeServerUrl) {
+        await sendMessage(chat_id, `⚠️ CODE_SERVER_URL not set. Run code-server.js and ngrok first.`);
+        return NextResponse.json({ ok: true });
+      }
+
+      // Format: /write <path> <instruction>
+      // Mr. Thomas reads the file, applies the instruction, writes it back
+      const parts = text.replace('/write', '').trim().split(' ');
+      const filePath = parts[0];
+      const instruction = parts.slice(1).join(' ').trim();
+
+      if (!filePath || !instruction) {
+        await sendMessage(chat_id, `✏️ *Mr. Thomas — File Editor*\n\nUsage:\n/write <path> <instruction>\n\nExample:\n/write ~/telegram-mini-app/src/lib/coaching.ts add error handling to the runWeeklyCoaching function`, { parse_mode: null });
+        return NextResponse.json({ ok: true });
+      }
+
+      try {
+        await sendMessage(chat_id, `✏️ Reading and editing ${filePath}...`, { parse_mode: null });
+
+        // Read the file
+        const readRes = await fetch(`${codeServerUrl}?path=${encodeURIComponent(filePath)}`, {
+          headers: { 'x-secret': codeServerSecret, 'ngrok-skip-browser-warning': '1' },
+        });
+        const fileData = await readRes.json() as { content?: string; error?: string };
+        if (fileData.error) throw new Error(fileData.error);
+
+        const fileContent = fileData.content ?? '';
+
+        // Ask Mr. Thomas to apply the change
+        const newContent = await aiChat(
+          [{
+            role: 'user',
+            content: `File: ${filePath}\n\nInstruction: ${instruction}\n\nCurrent content:\n${fileContent}`,
+          }],
+          {
+            system: `You are Mr. Thomas — senior developer. You will be given a file and an instruction. Apply the instruction and return ONLY the complete updated file content. No explanation, no markdown fences, no commentary. Just the raw updated file.`,
+            maxTokens: 8000,
+          }
+        );
+        if (!newContent) throw new Error('Mr. Thomas returned empty content');
+
+        // Write the file back
+        const writeRes = await fetch(codeServerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-secret': codeServerSecret, 'ngrok-skip-browser-warning': '1' },
+          body: JSON.stringify({ path: filePath, content: newContent }),
+        });
+        const writeData = await writeRes.json() as { ok?: boolean; error?: string };
+        if (writeData.error) throw new Error(writeData.error);
+
+        await sendMessage(chat_id, `✅ Done. ${filePath} has been updated.\n\nDeploy when ready: send me "deploy" or run vercel --prod in terminal.`, { parse_mode: null });
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await sendMessage(chat_id, `⚠️ Write failed: ${msg}`, { parse_mode: null });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     // ── /bible — available to all roles ───────────────────
     if (text.startsWith('/bible')) {
       const question = text.replace('/bible', '').trim();
@@ -217,11 +379,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
       try {
-        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-        const response = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
-          system: `You are a helpful, knowledgeable, and highly accessible Bible study guide called Bible Buddies. You speak in the stylistic vein of Dr. Eric Mason — clear, passionate, doctrinally sound, accessible to new believers yet enriching for seasoned ones.
+        const reply = await aiChat(
+          [{ role: 'user', content: question }],
+          {
+            system: `You are a helpful, knowledgeable, and highly accessible Bible study guide called Bible Buddies. You speak in the stylistic vein of Dr. Eric Mason — clear, passionate, doctrinally sound, accessible to new believers yet enriching for seasoned ones.
 
 RULES:
 1. Help the user discover what the Bible ACTUALLY says. Handle practical, theological, and historical questions comprehensively.
@@ -234,9 +395,9 @@ RULES:
 8. Format clearly: separate scripture text so it stands out visually.
 9. ALWAYS use the CSB (Christian Standard Bible) translation.
 10. End every response with: "📖 Don't just take my word for it — read the full chapter yourself."`,
-          messages: [{ role: 'user', content: question }],
-        });
-        const reply = response.content[0].type === 'text' ? response.content[0].text : 'Unable to retrieve scriptures at this time.';
+            maxTokens: 1024,
+          }
+        );
         await sendMessage(chat_id, reply, { parse_mode: null });
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -381,6 +542,33 @@ RULES:
       return NextResponse.json({ ok: true });
     }
 
+    // ── /retest — member retakes after 90 days ─────────────
+    if (text === '/retest') {
+      const existingProfile = await getProfile(user_id);
+      if (!existingProfile) {
+        await sendMessage(chat_id, `You haven't taken the assessment yet. Send /start to begin.`);
+        return NextResponse.json({ ok: true });
+      }
+      // Store baseline scores before resetting, then start fresh session
+      const { createClient: createRetestClient } = await import('@supabase/supabase-js');
+      const retestSupabase = createRetestClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      await retestSupabase.from('profiles_242go').update({
+        baseline_overall: existingProfile.overall_score,
+        baseline_character: existingProfile.character_score,
+        baseline_competency: existingProfile.competency_score,
+        baseline_consistency: existingProfile.consistency_score,
+        is_retest: true,
+      }).eq('telegram_user_id', user_id);
+      await startSession(user_id, first_name, username);
+      await sendMessage(chat_id, `🔄 *90-Day Retest — Let's see your growth, ${first_name}.*\n\nSame 30 questions. Answer honestly. Your results will be compared to your baseline.\n\nReady?`, {
+        reply_markup: { keyboard: [[{ text: "✅ Yes, I'm ready" }]], resize_keyboard: true, one_time_keyboard: true },
+      });
+      return NextResponse.json({ ok: true });
+    }
+
     // ── /start ─────────────────────────────────────────────
     if (text === '/start' || text.startsWith('/start ')) {
       const existingProfile = await getProfile(user_id);
@@ -453,9 +641,16 @@ RULES:
         const profile = await scoreAndSaveProfile(user_id, first_name, username, updated.answers);
         syncProfileToNotion(profile).catch(err => console.error('Notion sync error:', err));
         await markComplete(user_id);
-        // Auto-promote to member on assessment completion
         await setRole(user_id, first_name, username, 'member', user_id);
         await sendProfileResult(chat_id, profile);
+        // Generate and send 90-day development plan
+        generateDevelopmentPlan(profile).then(async (plan) => {
+          if (plan) {
+            await sendMessage(chat_id, `📋 *Your 90-Day Development Plan*\n\n${plan}`, { parse_mode: null });
+          }
+        }).catch(err => console.error('Dev plan error:', err));
+        // If retest, send growth comparison
+        compareGrowth(user_id, first_name, profile).catch(err => console.error('Growth compare error:', err));
       } else {
         if (updated.current_question === 11 || updated.current_question === 21) {
           await sendProgressMessage(chat_id, updated.current_question - 1);
