@@ -259,18 +259,18 @@ async function notifyAdmins(data: {
   const emoji = { yellow: '🟡', orange: '🟠', red: '🔴' }[data.alert_level] ?? '⚠️';
   const levelEmoji = { seeker: '🌱', disciple: '📖', servant: '🤝', leader: '🌟', multiplier: '🔥' }[data.level] ?? '⭐';
 
-  const message = `${emoji} *242Go Regression Alert — ${data.alert_level.toUpperCase()}*
+  const message = `${emoji} *Mr. Thomas Alert — ${data.alert_level.toUpperCase()}*
 
 Member: *${data.first_name}*
 Level: ${levelEmoji} ${data.level.charAt(0).toUpperCase() + data.level.slice(1)} (${data.level_number}/5)
 
-*What we're seeing:*
+*What's happening:*
 ${data.reason}
 
-*Recommended action:*
+*What needs to happen:*
 ${data.action}
 
-_No man left behind. Someone needs to reach out._`;
+_No man left behind._`;
 
   for (const adminId of ADMIN_IDS) {
     await sendMessage(adminId, message);
@@ -320,7 +320,97 @@ export async function runRegressionCheck(): Promise<{ checked: number; flagged: 
   }
 
   console.log(`Regression check complete: ${profiles.length} checked, ${flagged} flagged`);
+
+  // Also check for 90-day retests due
+  await checkRetestsDue();
+
   return { checked: profiles.length, flagged };
+}
+
+// ─────────────────────────────────────────────
+// 90-DAY RETEST — notify members when due
+// ─────────────────────────────────────────────
+async function checkRetestsDue(): Promise<void> {
+  const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Find profiles assessed 90+ days ago that haven't been retested
+  const { data: profiles } = await getSupabaseClient()
+    .from('profiles_242go')
+    .select('telegram_user_id, first_name, level, level_number, assessed_at, retest_notified_at')
+    .gte('level_number', 1)
+    .lte('assessed_at', ninetyDaysAgo)
+    .or('retest_notified_at.is.null,retest_notified_at.lte.' + ninetyDaysAgo);
+
+  if (!profiles?.length) return;
+
+  for (const profile of profiles) {
+    try {
+      // Notify member
+      await sendMessage(
+        profile.telegram_user_id,
+        `🔄 *Time for your 90-Day Growth Check, ${profile.first_name}!*\n\nIt's been 90 days since your last assessment. Time to see how far you've come.\n\nSend /retest to take your assessment again and see your growth.`
+      );
+
+      // Notify admins (Mr. Thomas)
+      for (const adminId of ADMIN_IDS) {
+        await sendMessage(
+          adminId,
+          `📅 *90-Day Retest Due*\n\n${profile.first_name} is due for their retest.\nCurrent level: ${profile.level} (${profile.level_number}/5)\n\nThey've been notified.`
+        );
+      }
+
+      // Mark as notified
+      await getSupabaseClient()
+        .from('profiles_242go')
+        .update({ retest_notified_at: new Date().toISOString() })
+        .eq('telegram_user_id', profile.telegram_user_id);
+
+    } catch (err) {
+      console.error(`Retest notification failed for ${profile.first_name}:`, err);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// GROWTH COMPARISON — compare retest vs baseline
+// ─────────────────────────────────────────────
+export async function compareGrowth(
+  telegram_user_id: number,
+  first_name: string,
+  newProfile: {
+    overall_score: number; character_score: number;
+    competency_score: number; consistency_score: number;
+    level: string; level_number: number;
+  }
+): Promise<void> {
+  // Get the original baseline from profile history or current stored scores
+  const { data: baseline } = await getSupabaseClient()
+    .from('profiles_242go')
+    .select('overall_score, character_score, competency_score, consistency_score, level, level_number, assessed_at')
+    .eq('telegram_user_id', telegram_user_id)
+    .single();
+
+  if (!baseline) return;
+
+  const scoreDiff = newProfile.overall_score - baseline.overall_score;
+  const levelDiff = newProfile.level_number - baseline.level_number;
+  const arrow = scoreDiff > 0 ? '📈' : scoreDiff < 0 ? '📉' : '➡️';
+
+  const growthMsg = `${arrow} *90-Day Growth Report — ${first_name}*
+
+*Overall:* ${baseline.overall_score} → ${newProfile.overall_score} (${scoreDiff >= 0 ? '+' : ''}${scoreDiff} pts)
+*Character:* ${baseline.character_score} → ${newProfile.character_score}
+*Competency:* ${baseline.competency_score} → ${newProfile.competency_score}
+*Consistency:* ${baseline.consistency_score} → ${newProfile.consistency_score}
+${levelDiff > 0 ? `\n🎉 *Level Up!* ${baseline.level} → ${newProfile.level}` : levelDiff < 0 ? `\n⚠️ Level: ${baseline.level} → ${newProfile.level}` : `\nLevel: ${newProfile.level} (holding steady)`}`;
+
+  // Send to member
+  await sendMessage(telegram_user_id, growthMsg);
+
+  // Send to admins
+  for (const adminId of ADMIN_IDS) {
+    await sendMessage(adminId, `📊 *Retest Complete*\n\n${growthMsg}`);
+  }
 }
 
 // ─────────────────────────────────────────────

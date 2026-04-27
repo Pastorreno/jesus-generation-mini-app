@@ -387,6 +387,44 @@ export async function scoreAndSaveProfile(
 }
 
 // ─────────────────────────────────────────────
+// GENERATE 90-day development plan
+// ─────────────────────────────────────────────
+export async function generateDevelopmentPlan(profile: ScoredProfile): Promise<string> {
+  const weakAreas = [
+    profile.character_flagged ? 'character' : null,
+    profile.competency_flagged ? 'competency' : null,
+    profile.consistency_flagged ? 'consistency' : null,
+  ].filter(Boolean).join(', ') || 'none flagged';
+
+  const prompt = `You are Mr. Thomas, a senior leadership development coach. Create a focused 90-day development plan for ${profile.first_name}.
+
+PROFILE:
+- Level: ${profile.level} (${profile.level_number}/5)
+- Score: ${profile.overall_score}/100
+- Character: ${profile.character_score}/32 ${profile.character_flagged ? '⚠️' : ''}
+- Competency: ${profile.competency_score}/28 ${profile.competency_flagged ? '⚠️' : ''}
+- Consistency: ${profile.consistency_score}/40 ${profile.consistency_flagged ? '⚠️' : ''}
+- Personality: ${profile.dominant_animal} / ${profile.secondary_animal}
+- Weak areas: ${weakAreas}
+- FAT gate: ${profile.fat_gate_triggered ? 'triggered (faithfulness gap)' : 'passed'}
+
+Write a direct, practical 90-day plan. 3 sections:
+1. MONTH 1 — Foundation (what to build first)
+2. MONTH 2 — Momentum (what to develop)
+3. MONTH 3 — Proof (what to demonstrate)
+
+Each month: 2-3 specific actions. No fluff. Straight shooter tone. Under 300 words total.`;
+
+  const response = await getAnthropicClient().messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 600,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return response.content[0].type === 'text' ? response.content[0].text : '';
+}
+
+// ─────────────────────────────────────────────
 // GET existing profile
 // ─────────────────────────────────────────────
 export async function getProfile(

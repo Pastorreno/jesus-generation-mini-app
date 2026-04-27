@@ -8,18 +8,20 @@ function getSupabaseClient() {
   );
 }
 
-// GET /api/profile?telegram_id=123456789
+// GET /api/profile?user_id=123 or ?telegram_id=123
 export async function GET(req: NextRequest) {
-  const telegram_id = req.nextUrl.searchParams.get('telegram_id');
-  if (!telegram_id) return NextResponse.json({ error: 'missing telegram_id' }, { status: 400 });
+  const raw = req.nextUrl.searchParams.get('user_id') ?? req.nextUrl.searchParams.get('telegram_id');
+  if (!raw) return NextResponse.json({ error: 'missing user_id' }, { status: 400 });
 
-  const { data: profile } = await getSupabaseClient()
-    .from('profiles_242go')
-    .select('*')
-    .eq('telegram_user_id', parseInt(telegram_id))
-    .single();
+  const uid = parseInt(raw);
 
-  return NextResponse.json({ profile: profile || null });
+  const [{ data: profile }, { data: coaching }] = await Promise.all([
+    getSupabaseClient().from('profiles_242go').select('*').eq('telegram_user_id', uid).single(),
+    getSupabaseClient().from('coaching_log').select('id, sent_at, message_text, response_text, day_type')
+      .eq('telegram_user_id', uid).order('sent_at', { ascending: false }).limit(20),
+  ]);
+
+  return NextResponse.json({ profile: profile ?? null, coaching: coaching ?? [] });
 }
 
 // POST /api/profile
