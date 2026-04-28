@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type TgUser = { id: number; first_name: string; username?: string };
 
 type Profile = {
   first_name: string;
-  username?: string;
   overall_score?: number;
   level?: string;
   level_number?: number;
@@ -43,10 +43,10 @@ function ScoreBar({ label, value, max, color }: { label: string; value: number; 
 }
 
 export default function Page() {
+  const router = useRouter();
   const [tgUser, setTgUser] = useState<TgUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     const tg = (window as unknown as { Telegram?: { WebApp?: { ready?: () => void; expand?: () => void; initDataUnsafe?: { user?: TgUser } } } }).Telegram?.WebApp;
@@ -59,23 +59,16 @@ export default function Page() {
     fetch(`/api/profile?user_id=${user.id}`)
       .then(r => r.json())
       .then((d: { profile?: Profile }) => setProfile(d.profile ?? null))
-      .catch(e => setError(String(e)))
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const bg = "#0a0a0a";
 
   if (loading) return (
-    <div style={{ background: bg, color: "#fff", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
+    <div style={{ background: bg, height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12 }}>
       <div style={{ width: 32, height: 32, border: "3px solid #333", borderTop: "3px solid #cc0000", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <span style={{ color: "#555", fontSize: 13 }}>Loading...</span>
-    </div>
-  );
-
-  if (error) return (
-    <div style={{ background: bg, color: "#cc0000", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, textAlign: "center", fontSize: 13 }}>
-      {error}
     </div>
   );
 
@@ -87,10 +80,6 @@ export default function Page() {
 
   const levelNum = profile?.level_number ?? 0;
   const levelColor = LEVEL_COLOR[levelNum] ?? "#555";
-  const overallScore = profile?.overall_score ?? 0;
-  const charScore = profile?.character_score ?? 0;
-  const compScore = profile?.competency_score ?? 0;
-  const consScore = profile?.consistency_score ?? 0;
   const name = profile?.first_name ?? tgUser.first_name;
 
   return (
@@ -102,7 +91,7 @@ export default function Page() {
           Jesus Generation
         </p>
         <h1 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 2px" }}>
-          Welcome, {name}
+          {profile ? `Welcome back, ${name}` : `Welcome, ${tgUser.first_name}`}
         </h1>
         {tgUser.username && (
           <p style={{ color: "#444", fontSize: 12, margin: 0 }}>@{tgUser.username}</p>
@@ -110,34 +99,43 @@ export default function Page() {
       </div>
 
       {!profile ? (
-        /* ── NO PROFILE: CTA to take assessment ── */
-        <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 16, padding: 28, textAlign: "center" }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>📋</div>
-          <h2 style={{ color: "#fff", fontSize: 17, fontWeight: 700, margin: "0 0 8px" }}>
-            Take Your Assessment
-          </h2>
-          <p style={{ color: "#555", fontSize: 13, lineHeight: 1.6, margin: "0 0 20px" }}>
-            Your Kingdom Mandate Assessment reveals your leadership level, personality type, and 90-day growth plan.
-          </p>
-          <p style={{ color: "#444", fontSize: 12, margin: 0 }}>
-            Send <span style={{ color: "#fff", fontWeight: 700 }}>/start</span> to the bot to begin
+        /* ── NO PROFILE: launch assessment ── */
+        <div>
+          <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 16, padding: 28, marginBottom: 16 }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
+            <h2 style={{ color: "#fff", fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>
+              Kingdom Mandate Assessment
+            </h2>
+            <p style={{ color: "#555", fontSize: 13, lineHeight: 1.7, margin: "0 0 24px" }}>
+              30 questions. Measures your leadership level across Character, Competency, and Consistency. Takes about 10 minutes.
+            </p>
+            <button
+              onClick={() => router.push(`/assessment?telegram_id=${tgUser.id}&name=${encodeURIComponent(tgUser.first_name)}&username=${encodeURIComponent(tgUser.username ?? "")}`)}
+              style={{
+                width: "100%", padding: 16, background: "#cc0000", color: "#fff",
+                border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Begin Assessment →
+            </button>
+          </div>
+          <p style={{ color: "#333", fontSize: 12, textAlign: "center" }}>
+            No account needed — your Telegram identity is used automatically
           </p>
         </div>
       ) : (
         /* ── HAS PROFILE: full dashboard ── */
         <>
-          {/* Level badge */}
-          <div style={{ background: "#111", border: `1px solid ${levelColor}33`, borderRadius: 16, padding: "20px 20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Level + score */}
+          <div style={{ background: "#111", border: `1px solid ${levelColor}33`, borderRadius: 16, padding: "20px", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <p style={{ color: "#555", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 4px" }}>Pipeline Level</p>
-              <p style={{ color: levelColor, fontSize: 28, fontWeight: 800, margin: "0 0 2px" }}>
-                Level {levelNum}
-              </p>
+              <p style={{ color: levelColor, fontSize: 28, fontWeight: 800, margin: "0 0 2px" }}>Level {levelNum}</p>
               <p style={{ color: "#aaa", fontSize: 14, margin: 0 }}>{profile.level ?? "—"}</p>
             </div>
             <div style={{ textAlign: "right" }}>
               <p style={{ color: "#555", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 4px" }}>Overall Score</p>
-              <p style={{ color: "#fff", fontSize: 32, fontWeight: 800, margin: 0 }}>{overallScore}</p>
+              <p style={{ color: "#fff", fontSize: 32, fontWeight: 800, margin: 0 }}>{profile.overall_score ?? 0}</p>
             </div>
           </div>
 
@@ -148,8 +146,7 @@ export default function Page() {
               <div>
                 <p style={{ color: "#555", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 2px" }}>Personality</p>
                 <p style={{ color: "#fff", fontSize: 15, fontWeight: 700, margin: 0 }}>
-                  {profile.animal_primary}
-                  {profile.animal_secondary ? ` / ${profile.animal_secondary}` : ""}
+                  {profile.animal_primary}{profile.animal_secondary ? ` / ${profile.animal_secondary}` : ""}
                 </p>
               </div>
               {profile.bot_mode && (
@@ -162,12 +159,12 @@ export default function Page() {
           )}
 
           {/* C/C/C scores */}
-          {(charScore > 0 || compScore > 0 || consScore > 0) && (
+          {((profile.character_score ?? 0) > 0 || (profile.competency_score ?? 0) > 0 || (profile.consistency_score ?? 0) > 0) && (
             <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 14, padding: "18px 20px", marginBottom: 16 }}>
               <p style={{ color: "#555", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 16px" }}>C/C/C Breakdown</p>
-              <ScoreBar label="Character" value={charScore} max={32} color="#4a9eff" />
-              <ScoreBar label="Competency" value={compScore} max={28} color="#44aa44" />
-              <ScoreBar label="Consistency" value={consScore} max={40} color="#ffaa00" />
+              <ScoreBar label="Character" value={profile.character_score ?? 0} max={32} color="#4a9eff" />
+              <ScoreBar label="Competency" value={profile.competency_score ?? 0} max={28} color="#44aa44" />
+              <ScoreBar label="Consistency" value={profile.consistency_score ?? 0} max={40} color="#ffaa00" />
               {profile.fat_gate_passed !== undefined && (
                 <p style={{ color: profile.fat_gate_passed ? "#44aa44" : "#cc0000", fontSize: 11, margin: "8px 0 0", fontWeight: 600 }}>
                   {profile.fat_gate_passed ? "✓ F.A.T. Gate passed" : "✗ F.A.T. Gate not yet passed"}
@@ -186,11 +183,11 @@ export default function Page() {
             </div>
           )}
 
-          {/* Next step */}
+          {/* Coaching reminder */}
           <div style={{ background: "#0f0f0f", border: "1px solid #44aa4422", borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 16 }}>💬</span>
             <p style={{ color: "#aaa", fontSize: 12, margin: 0, lineHeight: 1.5 }}>
-              Your coaching messages arrive <span style={{ color: "#fff" }}>Mon / Wed / Fri</span> in the bot.
+              Coaching messages arrive <span style={{ color: "#fff" }}>Mon / Wed / Fri</span> in the bot.
             </p>
           </div>
         </>

@@ -58,15 +58,16 @@ export async function sendMessage(
 export async function sendWelcome(chat_id: number, first_name: string): Promise<void> {
   await sendMessage(
     chat_id,
-    `🌍 *Welcome to 242Go, ${first_name}.*\n\nThis is the Jesus Generation Leadership Pipeline.\n\nActs 2:42 describes the first church — devoted to teaching, fellowship, breaking bread, and prayer. That's not a program. That's a people. And that's what we're building.\n\nWhat you're about to take is a 30-question leadership assessment. Not a test you pass or fail — more like a mirror. It shows where you are today so we can walk with you toward who God is calling you to become.\n\n_"For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do."_ — Ephesians 2:10\n\nYou were made for this, ${first_name}. Let's find out where you are.\n\n*No man left behind.*\n\nReady?`,
+    `👋 *Welcome, ${first_name}.*
+
+Your leadership pipeline is ready.
+
+Tap below to open your dashboard — take the assessment, view your profile, and track your growth.`,
     {
       reply_markup: {
-        keyboard: [
-          [{ text: '✅ Yes, I\'m ready' }],
-          [{ text: '📊 Open Dashboard', web_app: { url: APP_URL } }],
-        ],
-        resize_keyboard: true,
-        one_time_keyboard: true,
+        inline_keyboard: [[
+          { text: '🚀 Open Dashboard', web_app: { url: APP_URL } },
+        ]],
       },
     }
   );

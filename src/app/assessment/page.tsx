@@ -38,14 +38,30 @@ export default function AssessmentPage() {
   const [q1Index, setQ1Index] = useState(0);
   const [q3Index, setQ3Index] = useState(0);
   const [resumed, setResumed] = useState(false);
+  const [telegramId, setTelegramId] = useState<number | null>(null);
 
   const [intake, setIntake] = useState<Intake>({ name: '', email: '', phone: '', telegram: '' });
   const [s1Answers, setS1Answers] = useState<S1Answers>({});
   const [s2Answers, setS2Answers] = useState<S2Answers>({});
   const [s3Answers, setS3Answers] = useState<S3Answers>({});
 
-  // Restore progress on mount
+  // Restore progress on mount; auto-skip intake if telegram params present
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tgId = params.get('telegram_id');
+    const tgName = params.get('name');
+    const tgUsername = params.get('username');
+
+    if (tgId) {
+      setTelegramId(Number(tgId));
+      setIntake({
+        name: tgName ? decodeURIComponent(tgName) : '',
+        email: '',
+        phone: '',
+        telegram: tgUsername ? decodeURIComponent(tgUsername) : '',
+      });
+    }
+
     const saved = loadProgress();
     if (saved?.step && saved.step !== 'intake') {
       setIntake(saved.intake ?? { name: '', email: '', phone: '', telegram: '' });
@@ -56,6 +72,9 @@ export default function AssessmentPage() {
       setQ3Index(saved.q3Index ?? 0);
       setStep(saved.step);
       setResumed(true);
+    } else if (tgId && tgName) {
+      // Skip intake form — go straight to questions
+      setStep('section1');
     }
   }, []);
 
@@ -90,11 +109,16 @@ export default function AssessmentPage() {
       const res = await fetch('/api/assessment/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intake, s1Answers, s2Answers, s3Answers }),
+        body: JSON.stringify({ intake, s1Answers, s2Answers, s3Answers, telegram_user_id: telegramId }),
       });
       const { leaderId, error } = await res.json() as { leaderId?: string; error?: string };
       if (error || !leaderId) throw new Error(error ?? 'No ID returned');
-      router.push(`/assessment/results/${leaderId}`);
+      // If opened from mini app, go back to dashboard; otherwise show results page
+      if (telegramId) {
+        router.push('/');
+      } else {
+        router.push(`/assessment/results/${leaderId}`);
+      }
     } catch {
       alert('Something went wrong submitting. Please try again.');
       setStep('section3');

@@ -156,11 +156,12 @@ function getRecommendedModules(omegaLevel: number, weakestDomain: string): strin
 }
 
 export async function POST(req: NextRequest) {
-  const { intake, s1Answers, s2Answers, s3Answers } = await req.json() as {
+  const { intake, s1Answers, s2Answers, s3Answers, telegram_user_id } = await req.json() as {
     intake: { name: string; email: string; phone: string; telegram: string };
     s1Answers: S1Answers;
     s2Answers: S2Answers;
     s3Answers: S3Answers;
+    telegram_user_id?: number;
   };
 
   try {
@@ -217,6 +218,7 @@ export async function POST(req: NextRequest) {
       name: intake.name.trim(),
       email: intake.email.trim() || null,
       phone: intake.phone.trim() || null,
+      telegram_user_id: telegram_user_id ?? null,
 
       lps_score: krs.lps,
       pipeline_level: level.level,
@@ -281,6 +283,25 @@ export async function POST(req: NextRequest) {
       if (error) throw error;
       leaderId   = (data as { id: string; member_id: string }).id;
       memberSlug = (data as { id: string; member_id: string }).member_id ?? leaderId;
+    }
+
+    // Sync to profiles_242go so the mini app dashboard can read it
+    if (telegram_user_id) {
+      await supabase.from('profiles_242go').upsert({
+        telegram_user_id,
+        first_name: intake.name.trim().split(' ')[0],
+        username: intake.telegram?.replace('@', '') || null,
+        overall_score: krs.lps,
+        level: level.name,
+        level_number: level.level,
+        character_score: fw.character,
+        competency_score: fw.competency,
+        consistency_score: fw.faithful ?? 0,
+        animal_primary: animals.primary,
+        animal_secondary: animals.secondary,
+        bot_mode: level.level <= 1 ? 'care' : level.level <= 2 ? 'companion' : 'coach',
+        ai_narrative: profile,
+      }, { onConflict: 'telegram_user_id' });
     }
 
     // Audit log
