@@ -9,8 +9,8 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Jesus Generation",
-  description: "Leadership Pipeline Dashboard",
+  title: "ETS Academy",
+  description: "ETS Academy — Equip, Train, Send Out",
 };
 
 export default function RootLayout({

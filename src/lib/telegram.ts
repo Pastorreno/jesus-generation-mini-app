@@ -122,7 +122,7 @@ export async function sendProgressMessage(chat_id: number, question_number: numb
 export async function sendProcessingMessage(chat_id: number, first_name: string): Promise<void> {
   await sendMessage(
     chat_id,
-    `✅ *Assessment complete, ${first_name}!*\n\n_Generating your 242Go Leadership Profile..._\n\nThis takes about 15–20 seconds. 🙏`,
+    `✅ *Assessment complete, ${first_name}!*\n\n_Generating your ETS Academy Leadership Profile..._\n\nThis takes about 15–20 seconds. 🙏`,
     { reply_markup: { remove_keyboard: true } }
   );
 }
@@ -184,7 +184,7 @@ export async function sendAlreadyAssessed(
   const emoji = { seeker: '🌱', disciple: '📖', servant: '🤝', leader: '🌟', multiplier: '🔥' }[level] ?? '⭐';
   await sendMessage(
     chat_id,
-    `${emoji} *${first_name}, you've already completed your 242Go Assessment.*\n\nYour current level: *${level.charAt(0).toUpperCase() + level.slice(1)} (Level ${level_number})*\n\nOpen your dashboard to see your full profile or check in with your coach.`,
+    `${emoji} *${first_name}, you've already completed your ETS Academy Assessment.*\n\nYour current level: *${level.charAt(0).toUpperCase() + level.slice(1)} (Level ${level_number})*\n\nOpen your dashboard to see your full profile or check in with your coach.`,
     {
       reply_markup: {
         inline_keyboard: [[
@@ -280,7 +280,7 @@ export async function sendToChannel(
 export async function sendGroupRedirect(user_id: number, first_name: string): Promise<void> {
   await sendMessage(
     user_id,
-    `👋 Hi ${first_name}! Your 242Go Leadership Assessment is a private conversation.\n\nTap below to open your personal dashboard.`,
+    `👋 Hi ${first_name}! Your ETS Academy Assessment is a private conversation.\n\nTap below to open your personal dashboard.`,
     {
       reply_markup: {
         inline_keyboard: [[

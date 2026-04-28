@@ -160,7 +160,7 @@ function buildContent(profile: ScoredProfile) {
       object: 'block',
       type: 'heading_2',
       heading_2: {
-        rich_text: [{ text: { content: '242Go Leadership Profile' } }],
+        rich_text: [{ text: { content: 'ETS Academy Leadership Profile' } }],
       },
     });
     blocks.push({

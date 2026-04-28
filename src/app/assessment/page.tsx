@@ -130,7 +130,7 @@ export default function AssessmentPage() {
       {/* Header */}
       <div style={{ background: '#0f0f0f', borderBottom: '1px solid #1e1e1e', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <p style={{ color: '#cc0000', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 3, margin: 0 }}>Jesus Generation</p>
+          <p style={{ color: '#cc0000', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 3, margin: 0 }}>ETS Academy</p>
           <p style={{ color: '#fff', fontSize: 14, fontWeight: 700, margin: '2px 0 0' }}>Leadership Assessment</p>
         </div>
         {step !== 'intake' && step !== 'submitting' && (

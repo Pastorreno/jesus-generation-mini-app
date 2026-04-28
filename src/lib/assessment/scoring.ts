@@ -206,7 +206,7 @@ async function generateAIProfile(
   if (flags.consistency) flagText.push('Consistency patterns must be established before advancement');
   if (fat_gate_triggered) flagText.push('F.A.T. gate triggered — Faithfulness, Availability, or Teachability needs development');
 
-  const prompt = `You are the 242Go AHDP Assessment Engine. You have just scored a leadership assessment for a member of a Christian ministry.
+  const prompt = `You are the ETS Academy Assessment Engine. You have just scored a leadership assessment for a member of a Christian ministry.
 
 PERSON: ${firstName}
 LEVEL: ${level.toUpperCase()} (Level ${level_number} of 5)
@@ -260,7 +260,7 @@ Return ONLY valid JSON with these exact keys:
 
 For the profile_card field, use this exact format (fill in all brackets):
 ━━━━━━━━━━━━━━━━━━━━━━━
-   242Go LEADERSHIP PROFILE
+   ETS ACADEMY LEADERSHIP PROFILE
 ━━━━━━━━━━━━━━━━━━━━━━━
 Name:    ${firstName}
 Level:   [LEVEL NAME] (Level [N] of 5)
@@ -291,7 +291,7 @@ MINISTRY PLACEMENT
 PASSAGE 1 — The Welcome ✓
 [Next passage name and what it requires — 1 sentence]
 ━━━━━━━━━━━━━━━━━━━━━━━
-Your 242Go Coach is ready. 👇`;
+Your ETS Academy Coach is ready. 👇`;
 
   const response = await getAnthropicClient().messages.create({
     model: 'claude-sonnet-4-6',

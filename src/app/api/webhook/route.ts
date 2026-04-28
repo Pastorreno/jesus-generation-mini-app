@@ -576,7 +576,7 @@ RULES:
       }
       await sendMessage(
         chat_id,
-        `📊 *Your 242Go Dashboard*\n\nTap below to view your leadership profile, pipeline scores, and coaching resources.`,
+        `📊 *Your ETS Academy Dashboard*\n\nTap below to view your leadership profile, pipeline scores, and coaching resources.`,
         {
           reply_markup: {
             inline_keyboard: [[
@@ -674,7 +674,7 @@ RULES:
       }
       await sendMessage(
         chat_id,
-        `👋 Hi *${first_name}*! Welcome to the Leadership Pipeline.\n\nTap below to take your Kingdom Mandate Assessment — it takes about 10 minutes and gives you a personalized leadership profile.`,
+        `👋 Hi *${first_name}*! Welcome to the ETS Academy.\n\nTap below to take your Kingdom Mandate Assessment — it takes about 10 minutes and gives you a personalized leadership profile.`,
         {
           reply_markup: {
             inline_keyboard: [[
@@ -692,7 +692,7 @@ RULES:
     if (!session) {
       await sendMessage(
         chat_id,
-        `👋 Hi ${first_name}! Send /start to begin your 242Go Leadership Assessment.\n\nAvailable commands:\n/bible — Bible study\n/myrole — Check your access level`,
+        `👋 Hi ${first_name}! Send /start to begin your ETS Academy Assessment.\n\nAvailable commands:\n/bible — Bible study\n/myrole — Check your access level`,
         {
           reply_markup: {
             inline_keyboard: [[
@@ -822,7 +822,7 @@ RULES:
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    message: '242Go Leadership Pipeline webhook active',
+    message: 'ETS Academy webhook active',
     token_set: !!BOT_TOKEN,
     version: '2.0.0',
   });

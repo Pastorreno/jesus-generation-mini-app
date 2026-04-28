@@ -88,7 +88,7 @@ export default function Page() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <p style={{ color: "#cc0000", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, margin: "0 0 4px" }}>
-          Jesus Generation
+          ETS Academy
         </p>
         <h1 style={{ color: "#fff", fontSize: 22, fontWeight: 800, margin: "0 0 2px" }}>
           {profile ? `Welcome back, ${name}` : `Welcome, ${tgUser.first_name}`}
