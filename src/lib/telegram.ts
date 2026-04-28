@@ -225,6 +225,55 @@ export async function sendErrorMessage(chat_id: number): Promise<void> {
 }
 
 // ─────────────────────────────────────────────
+// CHANNEL POST — post to a channel by id (or env-configured ETS channel)
+// ─────────────────────────────────────────────
+export async function sendToChannel(
+  text: string,
+  channel_id?: number | string,
+  extra?: Record<string, unknown>,
+): Promise<{ ok: boolean; error?: string }> {
+  const target = channel_id ?? process.env.TELEGRAM_ETS_CHANNEL_ID;
+  if (!target) {
+    return { ok: false, error: 'TELEGRAM_ETS_CHANNEL_ID not set' };
+  }
+  if (!BOT_TOKEN) return { ok: false, error: 'TELEGRAM_BOT_TOKEN not set' };
+
+  const { parse_mode, ...rest } = extra ?? {};
+  const effectiveParseMode =
+    parse_mode === null ? undefined : (parse_mode ?? 'Markdown');
+  const payload: Record<string, unknown> = {
+    chat_id: typeof target === 'string' && /^-?\d+$/.test(target) ? Number(target) : target,
+    text,
+    ...rest,
+  };
+  if (effectiveParseMode) payload.parse_mode = effectiveParseMode;
+
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!data.ok) {
+    // Retry as plain text if markdown parse failed
+    if (effectiveParseMode === 'Markdown') {
+      const plain = { ...payload };
+      delete plain.parse_mode;
+      const retry = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(plain),
+      });
+      const retryData = await retry.json();
+      if (retryData.ok) return { ok: true };
+      return { ok: false, error: retryData.description || 'unknown error' };
+    }
+    return { ok: false, error: data.description || 'unknown error' };
+  }
+  return { ok: true };
+}
+
+// ─────────────────────────────────────────────
 // GROUP CHAT — redirect to private
 // ─────────────────────────────────────────────
 export async function sendGroupRedirect(user_id: number, first_name: string): Promise<void> {
