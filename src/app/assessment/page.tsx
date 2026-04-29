@@ -344,33 +344,37 @@ function S2Step({ answers, onChange, onNext }: { answers: S2Answers; onChange: (
     onChange({ ...answers, [rowNum]: { ...(answers[rowNum] ?? { lion:0, otter:0, gr:0, beaver:0 }), [col]: val } });
   }
 
+  const cols = ['lion','otter','gr','beaver'] as const;
+
   return (
     <div>
       <p style={{ color: '#cc0000', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 6 }}>Section 2 of 6 — Temperament</p>
       <p style={{ color: '#666', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
-        Rank each row: <strong style={{ color: '#aaa' }}>4 = Most Like Me</strong> to <strong style={{ color: '#aaa' }}>1 = Least Like Me</strong>. Each number used once per row.
+        For each row, rank all four words: <strong style={{ color: '#aaa' }}>4 = Most Like Me</strong> down to <strong style={{ color: '#aaa' }}>1 = Least Like Me</strong>. Use each number once per row.
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid #1e1e1e' }}>
-        {['🦁 Lion','🦦 Otter','🐕 Golden','🦫 Beaver'].map(h => (
-          <div key={h} style={{ textAlign: 'center', color: '#555', fontSize: 11, fontWeight: 700 }}>{h}</div>
-        ))}
-      </div>
-      {S2_ROWS.map(row => {
-        const a = answers[row.rowNumber] ?? { lion:0, otter:0, gr:0, beaver:0 };
-        return (
-          <div key={row.rowNumber} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 10, padding: '12px 8px', background: '#111', borderRadius: 10, border: '1px solid #1e1e1e' }}>
-            {(['lion','otter','gr','beaver'] as const).map(col => (
+
+      {S2_ROWS.map(row => (
+        <div key={row.rowNumber} style={{ marginBottom: 12, padding: '14px 12px', background: '#111', borderRadius: 12, border: '1px solid #1e1e1e' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+            {cols.map(col => (
               <div key={col} style={{ textAlign: 'center' }}>
-                <p style={{ color: '#ccc', fontSize: 11, marginBottom: 6, lineHeight: 1.3 }}>{row[col]}</p>
-                <select value={a[col] || ''} onChange={e => setRank(row.rowNumber, col, Number(e.target.value))} style={{ width: '100%', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 2px', color: a[col] ? '#fff' : '#555', fontSize: 14, textAlign: 'center' }}>
+                <p style={{ color: '#ddd', fontSize: 12, marginBottom: 8, lineHeight: 1.3, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {row[col]}
+                </p>
+                <select
+                  value={answers[row.rowNumber]?.[col] || ''}
+                  onChange={e => setRank(row.rowNumber, col, Number(e.target.value))}
+                  style={{ width: '100%', background: '#0a0a0a', border: `1px solid ${answers[row.rowNumber]?.[col] ? '#cc000066' : '#2a2a2a'}`, borderRadius: 6, padding: '8px 4px', color: answers[row.rowNumber]?.[col] ? '#fff' : '#555', fontSize: 15, textAlign: 'center' }}
+                >
                   <option value="">—</option>
                   {[4,3,2,1].map(v => <option key={v} value={v}>{v}</option>)}
                 </select>
               </div>
             ))}
           </div>
-        );
-      })}
+        </div>
+      ))}
+
       <button onClick={onNext} disabled={!allFilled} style={{ width: '100%', padding: 16, marginTop: 8, background: allFilled ? '#cc0000' : '#1a1a1a', color: allFilled ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allFilled ? 'pointer' : 'not-allowed' }}>
         Continue →
       </button>
