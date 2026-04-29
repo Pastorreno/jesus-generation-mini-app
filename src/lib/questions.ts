@@ -8,7 +8,7 @@ export const S1_QUESTIONS: S1Question[] = [
   // Q1 — bible_depth (Comprehension)
   {
     number: 1,
-    text: "Someone in your small group asks what a Bible passage means and you're not sure. You:",
+    text: "During a Bible study or discipleship meeting, someone asks what a passage means and you're not sure. You:",
     options: [
       { label: 'A', text: "Give your best guess and move on" },
       { label: 'B', text: "Say you're not sure and commit to studying it together before next week" },
@@ -140,7 +140,7 @@ export const S1_QUESTIONS: S1Question[] = [
   // Q13 — discipleship (Comprehension)
   {
     number: 13,
-    text: "You're leading a small group and one member is pulling back and disengaging. You:",
+    text: "You're discipling someone and they start pulling back and disengaging from the church. You:",
     options: [
       { label: 'A', text: "Give them space — they'll come around when they're ready" },
       { label: 'B', text: "Follow up personally, ask what's going on, and create a re-engagement plan" },
