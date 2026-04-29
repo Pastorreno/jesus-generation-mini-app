@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import Anthropic from '@anthropic-ai/sdk';
-import { scoreKRS, scoreAnimals, scoreLoveLanguages, assignLevel } from '@/lib/scoring';
-import type { S1Answers, S2Answers, S3Answers } from '@/lib/scoring';
+import { scoreKRS, scoreAnimals, scoreLoveLanguages, scoreGifts, assignLevel } from '@/lib/scoring';
+import type { S1Answers, S2Answers, S3Answers, S4Answers } from '@/lib/scoring';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -156,11 +156,12 @@ function getRecommendedModules(omegaLevel: number, weakestDomain: string): strin
 }
 
 export async function POST(req: NextRequest) {
-  const { intake, s1Answers, s2Answers, s3Answers, telegram_user_id } = await req.json() as {
+  const { intake, s1Answers, s2Answers, s3Answers, s4Answers, telegram_user_id } = await req.json() as {
     intake: { name: string; email: string; phone: string; telegram: string };
     s1Answers: S1Answers;
     s2Answers: S2Answers;
     s3Answers: S3Answers;
+    s4Answers?: S4Answers;
     telegram_user_id?: number;
   };
 
@@ -168,6 +169,8 @@ export async function POST(req: NextRequest) {
     const krs = scoreKRS(s1Answers);
     const animals = scoreAnimals(s2Answers);
     const ll = scoreLoveLanguages(s3Answers);
+    const { S4_QUESTIONS } = await import('@/lib/questions');
+    const gifts = s4Answers ? scoreGifts(s4Answers, S4_QUESTIONS) : null;
     const level = assignLevel(krs.lps);
     const fw = krs.framework;
 
@@ -301,6 +304,11 @@ export async function POST(req: NextRequest) {
         animal_secondary: animals.secondary,
         bot_mode: level.level <= 1 ? 'care' : level.level <= 2 ? 'companion' : 'coach',
         ai_narrative: profile,
+        ...(gifts ? {
+          spiritual_gift_primary: gifts.primary,
+          spiritual_gift_secondary: gifts.secondary,
+          spiritual_gift_tertiary: gifts.tertiary,
+        } : {}),
       }, { onConflict: 'telegram_user_id' });
     }
 

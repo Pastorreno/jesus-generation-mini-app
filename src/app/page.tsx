@@ -18,6 +18,9 @@ type Profile = {
   bot_mode?: string;
   ai_narrative?: string;     profile_card?: string;
   fat_gate_passed?: boolean; fat_gate_triggered?: boolean;
+  spiritual_gift_primary?: string;
+  spiritual_gift_secondary?: string;
+  spiritual_gift_tertiary?: string;
 };
 
 const LEVEL_COLOR: Record<number, string> = {
@@ -145,6 +148,25 @@ export default function Page() {
               <p style={{ color: "#fff", fontSize: 32, fontWeight: 800, margin: 0 }}>{profile.overall_score ?? 0}</p>
             </div>
           </div>
+
+          {/* Spiritual gifts */}
+          {profile.spiritual_gift_primary && (
+            <div style={{ background: "#111", border: "1px solid #1e1e1e", borderRadius: 14, padding: "16px 20px", marginBottom: 16 }}>
+              <p style={{ color: "#555", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, margin: "0 0 12px" }}>Spiritual Gifts</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { label: "Primary", value: profile.spiritual_gift_primary, color: "#cc0000" },
+                  { label: "Secondary", value: profile.spiritual_gift_secondary, color: "#ffaa00" },
+                  { label: "Tertiary", value: profile.spiritual_gift_tertiary, color: "#555" },
+                ].filter(g => g.value).map(g => (
+                  <div key={g.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ color: "#444", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>{g.label}</span>
+                    <span style={{ color: g.color, fontSize: 13, fontWeight: 700 }}>{g.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Animal personality */}
           {animalPrimary && (

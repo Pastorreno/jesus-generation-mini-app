@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { S1_QUESTIONS, S2_ROWS, S3_QUESTIONS } from '@/lib/questions';
-import type { S1Answers, S2Answers, S3Answers } from '@/lib/scoring';
+import { S1_QUESTIONS, S2_ROWS, S3_QUESTIONS, S4_QUESTIONS } from '@/lib/questions';
+import type { S1Answers, S2Answers, S3Answers, S4Answers } from '@/lib/scoring';
 
-type Step = 'intake' | 'section1' | 'section2' | 'section3' | 'submitting';
+type Step = 'intake' | 'section1' | 'section2' | 'section3' | 'section4' | 'submitting';
 
 interface Intake {
   name: string;
@@ -44,6 +44,7 @@ export default function AssessmentPage() {
   const [s1Answers, setS1Answers] = useState<S1Answers>({});
   const [s2Answers, setS2Answers] = useState<S2Answers>({});
   const [s3Answers, setS3Answers] = useState<S3Answers>({});
+  const [s4Answers, setS4Answers] = useState<S4Answers>({});
 
   // Restore progress on mount; auto-skip intake if telegram params present
   useEffect(() => {
@@ -68,6 +69,7 @@ export default function AssessmentPage() {
       setS1Answers(saved.s1Answers ?? {});
       setS2Answers(saved.s2Answers ?? {});
       setS3Answers(saved.s3Answers ?? {});
+      setS4Answers(saved.s4Answers ?? {});
       setQ1Index(saved.q1Index ?? 0);
       setQ3Index(saved.q3Index ?? 0);
       setStep(saved.step);
@@ -81,14 +83,15 @@ export default function AssessmentPage() {
   // Save progress whenever answers change
   useEffect(() => {
     if (step === 'intake' || step === 'submitting') return;
-    saveProgress({ step, intake, s1Answers, s2Answers, s3Answers, q1Index, q3Index });
-  }, [step, intake, s1Answers, s2Answers, s3Answers, q1Index, q3Index]);
+    saveProgress({ step, intake, s1Answers, s2Answers, s3Answers, s4Answers, q1Index, q3Index });
+  }, [step, intake, s1Answers, s2Answers, s3Answers, s4Answers, q1Index, q3Index]);
 
-  const totalSteps = 24 + 1 + 20;
+  const totalSteps = 24 + 1 + 20 + 27;
   let currentProgress = 0;
   if (step === 'section1') currentProgress = q1Index;
   else if (step === 'section2') currentProgress = 24;
   else if (step === 'section3') currentProgress = 25 + q3Index;
+  else if (step === 'section4') currentProgress = 45 + Object.keys(s4Answers).length;
   else if (step === 'submitting') currentProgress = totalSteps;
   const progressPct = Math.round((currentProgress / totalSteps) * 100);
 
@@ -109,7 +112,7 @@ export default function AssessmentPage() {
       const res = await fetch('/api/assessment/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ intake, s1Answers, s2Answers, s3Answers, telegram_user_id: telegramId }),
+        body: JSON.stringify({ intake, s1Answers, s2Answers, s3Answers, s4Answers, telegram_user_id: telegramId }),
       });
       const { leaderId, error } = await res.json() as { leaderId?: string; error?: string };
       if (error || !leaderId) throw new Error(error ?? 'No ID returned');
@@ -189,10 +192,19 @@ export default function AssessmentPage() {
             onSelect={(ans) => setS3Answers(prev => ({ ...prev, [S3_QUESTIONS[q3Index].number]: ans }))}
             onNext={() => {
               if (q3Index < S3_QUESTIONS.length - 1) setQ3Index(i => i + 1);
-              else handleSubmit();
+              else setStep('section4');
             }}
             questionIndex={q3Index}
             total={S3_QUESTIONS.length}
+          />
+        )}
+
+        {step === 'section4' && (
+          <S4Step
+            questions={S4_QUESTIONS}
+            answers={s4Answers}
+            onSelect={(num, ans) => setS4Answers(prev => ({ ...prev, [num]: ans }))}
+            onSubmit={handleSubmit}
           />
         )}
 
@@ -446,6 +458,67 @@ function S3Step({ question, selected, onSelect, onNext, questionIndex, total }: 
         }}
       >
         {questionIndex < total - 1 ? 'Next →' : 'Submit Assessment →'}
+      </button>
+    </div>
+  );
+}
+
+import type { S4Question } from '@/lib/questions';
+
+function S4Step({ questions, answers, onSelect, onSubmit }: {
+  questions: S4Question[];
+  answers: S4Answers;
+  onSelect: (num: number, ans: 'A' | 'B') => void;
+  onSubmit: () => void;
+}) {
+  const answered = questions.filter(q => answers[q.number]).length;
+  const allDone = answered === questions.length;
+
+  return (
+    <div>
+      <p style={{ color: '#cc0000', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>Section 4 of 4</p>
+      <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Spiritual Gifts</h2>
+      <p style={{ color: '#666', fontSize: 13, marginBottom: 24, lineHeight: 1.6 }}>
+        For each pair, choose the statement that resonates with you more. Be honest — there are no right or wrong answers.
+      </p>
+      <p style={{ color: '#444', fontSize: 12, marginBottom: 24 }}>{answered} of {questions.length} answered</p>
+
+      {questions.map(q => {
+        const sel = answers[q.number];
+        return (
+          <div key={q.number} style={{ marginBottom: 20 }}>
+            {(['A', 'B'] as const).map(opt => (
+              <button
+                key={opt}
+                onClick={() => onSelect(q.number, opt)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '18px 20px', marginBottom: 10,
+                  background: sel === opt ? '#1a0000' : '#111',
+                  border: `2px solid ${sel === opt ? '#cc0000' : '#1e1e1e'}`,
+                  borderRadius: 14, color: sel === opt ? '#fff' : '#999',
+                  fontSize: 14, cursor: 'pointer', lineHeight: 1.6,
+                }}
+              >
+                {opt === 'A' ? q.optionA : q.optionB}
+              </button>
+            ))}
+          </div>
+        );
+      })}
+
+      <button
+        onClick={onSubmit}
+        disabled={!allDone}
+        style={{
+          width: '100%', padding: 16, marginTop: 8,
+          background: allDone ? '#cc0000' : '#1a1a1a',
+          color: allDone ? '#fff' : '#444',
+          border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700,
+          cursor: allDone ? 'pointer' : 'not-allowed',
+        }}
+      >
+        Submit Assessment →
       </button>
     </div>
   );

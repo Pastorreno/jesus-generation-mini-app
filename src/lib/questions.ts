@@ -320,3 +320,46 @@ export const S3_QUESTIONS: S3Question[] = [
   { number: 43, optionA: "I feel most loved when someone takes something off my plate without being asked.", optionB: "Being together with someone's full attention makes me feel closest." },
   { number: 44, optionA: "A thoughtful gift, even small, tells me I was thought of.", optionB: "When someone helps me practically, I know they love me." },
 ];
+
+// ─── SECTION 4: SPIRITUAL GIFTS (Forced-choice pairs) ────────────────────────
+// 9 gifts: wisdom(W) knowledge(K) faith(F) healing(H) miracles(M)
+//          prophecy(P) discernment(D) tongues(T) interpretation(I)
+// 27 pairs — each gift appears 6 times total
+
+export interface S4Question {
+  number: number;
+  optionA: string;
+  giftA: string;
+  optionB: string;
+  giftB: string;
+}
+
+export const S4_QUESTIONS: S4Question[] = [
+  { number: 45, giftA: 'wisdom',        optionA: "When people face hard decisions, they naturally come to me for guidance.",         giftB: 'knowledge',     optionB: "I often sense things about a situation or person that I couldn't have known naturally." },
+  { number: 46, giftA: 'faith',         optionA: "I believe God for things others think are impossible — and I'm usually right.",    giftB: 'healing',       optionB: "I feel a deep burden to pray for people who are sick, and I've seen God move." },
+  { number: 47, giftA: 'miracles',      optionA: "I expect God to show up supernaturally in everyday situations.",                   giftB: 'prophecy',      optionB: "I often receive words, impressions, or pictures from God for people or situations." },
+  { number: 48, giftA: 'discernment',   optionA: "I can usually tell when something is spiritually off — even when I can't explain why.", giftB: 'tongues',   optionB: "I have a private prayer language that deepens my intimacy with God." },
+  { number: 49, giftA: 'interpretation',optionA: "When someone speaks in tongues, I often sense what God is saying through it.",     giftB: 'wisdom',        optionB: "I can usually see the God-honoring path through a complicated situation." },
+  { number: 50, giftA: 'knowledge',     optionA: "Scripture or specific truths come to me in prayer that directly apply to what someone is going through.", giftB: 'faith', optionB: "I rarely doubt that God will come through — even when circumstances say otherwise." },
+  { number: 51, giftA: 'healing',       optionA: "I feel called to lay hands on the sick and believe God heals today.",              giftB: 'miracles',      optionB: "I've prayed for situations that seemed impossible and watched God intervene." },
+  { number: 52, giftA: 'prophecy',      optionA: "I feel a strong pull to speak God's truth into people's lives — even when it's hard to hear.", giftB: 'discernment', optionB: "I can sense the spiritual atmosphere in a room or situation quickly." },
+  { number: 53, giftA: 'tongues',       optionA: "Praying in the Spirit is one of the most powerful parts of my prayer life.",       giftB: 'interpretation',optionB: "I feel responsible to bring clarity when God speaks through spiritual gifts in a gathering." },
+  { number: 54, giftA: 'wisdom',        optionA: "I help people see the long-term spiritual consequences of their choices.",          giftB: 'prophecy',      optionB: "I feel an urgency to declare what God is saying to His people right now." },
+  { number: 55, giftA: 'knowledge',     optionA: "God reveals specific details to me in prayer that confirm He's speaking.",         giftB: 'discernment',   optionB: "I can tell the difference between what's of God, what's of the flesh, and what's of the enemy." },
+  { number: 56, giftA: 'faith',         optionA: "My prayers are bold — I ask for big things and expect God to answer.",             giftB: 'healing',       optionB: "I'm drawn to people who are hurting physically and I believe God wants to heal them." },
+  { number: 57, giftA: 'miracles',      optionA: "I pray with expectation that God will do something that defies natural explanation.", giftB: 'tongues',     optionB: "Speaking in tongues builds my faith and keeps me spiritually sharp." },
+  { number: 58, giftA: 'interpretation',optionA: "I feel a responsibility to interpret spiritual messages so the church is edified.", giftB: 'wisdom',        optionB: "I'm often the one who brings calm and clarity when a group is confused or divided." },
+  { number: 59, giftA: 'prophecy',      optionA: "I've spoken words over people that came to pass or deeply confirmed what God was doing.", giftB: 'knowledge', optionB: "I receive specific information in prayer that I couldn't have known on my own." },
+  { number: 60, giftA: 'discernment',   optionA: "I test what I hear — I don't accept everything as from God without checking it.",  giftB: 'faith',         optionB: "I hold on to God's promises even when everything around me says it won't happen." },
+  { number: 61, giftA: 'healing',       optionA: "I believe physical healing is part of the Gospel and I pray for it regularly.",    giftB: 'miracles',      optionB: "I've seen God do things in prayer that had no natural explanation." },
+  { number: 62, giftA: 'tongues',       optionA: "My prayer life is most alive when I'm praying in the Spirit.",                     giftB: 'prophecy',      optionB: "I feel a burden to speak what God is saying — even when it's not popular." },
+  { number: 63, giftA: 'wisdom',        optionA: "People trust me to help them make decisions that align with God's will.",          giftB: 'discernment',   optionB: "I can sense when someone's motives don't match their words." },
+  { number: 64, giftA: 'interpretation',optionA: "I feel equipped to bring understanding when God speaks through spiritual gifts.",   giftB: 'knowledge',     optionB: "God gives me insight into people's situations that helps me pray and minister more effectively." },
+  { number: 65, giftA: 'faith',         optionA: "I encourage others to trust God for things they've given up on.",                  giftB: 'miracles',      optionB: "I pray expecting God to move in ways that go beyond what's natural." },
+  { number: 66, giftA: 'healing',       optionA: "When I pray for healing, I feel a genuine expectation — not just hope.",           giftB: 'discernment',   optionB: "I can sense when something spiritual is happening beneath the surface of a situation." },
+  { number: 67, giftA: 'prophecy',      optionA: "I feel a call to speak truth that builds, encourages, and corrects the church.",   giftB: 'interpretation',optionB: "I help bring order and understanding when spiritual gifts are operating." },
+  { number: 68, giftA: 'tongues',       optionA: "I use my prayer language to intercede when I don't know how to pray in words.",    giftB: 'wisdom',        optionB: "I can see what others miss — the deeper spiritual principle behind a situation." },
+  { number: 69, giftA: 'knowledge',     optionA: "I receive words of knowledge that confirm God's presence and direction.",          giftB: 'faith',         optionB: "I carry a settled confidence that God is working even when I can't see it." },
+  { number: 70, giftA: 'miracles',      optionA: "I believe God still parts waters — and I pray like it.",                           giftB: 'healing',       optionB: "I feel a specific anointing to pray for physical and emotional restoration." },
+  { number: 71, giftA: 'discernment',   optionA: "I'm often the one who senses when a spiritual door has been opened that shouldn't be.", giftB: 'interpretation', optionB: "I feel called to help the church understand what God is communicating through spiritual gifts." },
+];

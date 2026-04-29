@@ -230,3 +230,44 @@ export function assignLevel(lps: number): PipelineLevel {
   if (lps <= 79) return { level:4, name:'Trainer',    omega:4, tagline:'You are ready to make disciples who make disciples.' };
   return                 { level:5, name:'Multiplier', omega:5, tagline:'You are the pipeline. Now build it.' };
 }
+
+export type S4Answers = Record<number, 'A' | 'B'>;
+
+export interface GiftsResult {
+  scores: Record<string, number>;
+  primary: string;
+  secondary: string;
+  tertiary: string;
+}
+
+const GIFT_LABELS: Record<string, string> = {
+  wisdom:         'Word of Wisdom',
+  knowledge:      'Word of Knowledge',
+  faith:          'Gift of Faith',
+  healing:        'Gifts of Healing',
+  miracles:       'Working of Miracles',
+  prophecy:       'Prophecy',
+  discernment:    'Discerning of Spirits',
+  tongues:        'Tongues',
+  interpretation: 'Interpretation of Tongues',
+};
+
+export function scoreGifts(answers: S4Answers, questions: import('./questions').S4Question[]): GiftsResult {
+  const scores: Record<string, number> = {
+    wisdom:0, knowledge:0, faith:0, healing:0, miracles:0,
+    prophecy:0, discernment:0, tongues:0, interpretation:0,
+  };
+  for (const q of questions) {
+    const ans = answers[q.number];
+    if (!ans) continue;
+    const gift = ans === 'A' ? q.giftA : q.giftB;
+    scores[gift] = (scores[gift] ?? 0) + 1;
+  }
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  return {
+    scores,
+    primary:   GIFT_LABELS[sorted[0][0]],
+    secondary: GIFT_LABELS[sorted[1][0]],
+    tertiary:  GIFT_LABELS[sorted[2][0]],
+  };
+}
