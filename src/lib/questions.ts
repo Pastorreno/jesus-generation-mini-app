@@ -11,68 +11,67 @@ export interface S1LikertItem {
 }
 
 export const S1_ITEMS: S1LikertItem[] = [
-  // FAITHFUL (1-5) — Acts 2:42 "devoted themselves"
-  { number: 1,  construct: 'faithful',    text: "I keep my spiritual commitments — fasts, prayer challenges, reading plans — even when life gets hard." },
-  { number: 2,  construct: 'faithful',    text: "My time with God is the last thing I cut when my schedule gets full." },
-  { number: 3,  construct: 'faithful',    text: "I show up to corporate worship and prayer gatherings consistently, not just when it's convenient." },
-  { number: 4,  construct: 'faithful',    reverse: true, text: "I go through seasons where my spiritual disciplines completely fall off." },
+  // FAITHFUL (1-4) — Acts 2:42 "devoted themselves"
+  { number: 1,  construct: 'faithful',    text: "Even when life is hard, I still show up for God — I don't disappear when things get heavy." },
+  { number: 2,  construct: 'faithful',    text: "I have a real prayer life — not just crisis prayers, but regular time I give to God." },
+  { number: 3,  construct: 'faithful',    text: "When I make a commitment to God — a fast, a reading plan, a promise — I follow through." },
+  { number: 4,  construct: 'faithful',    reverse: true, text: "There are seasons where I completely fall off spiritually and it takes a long time to get back." },
 
-  // AVAILABLE (6-9) — Acts 2:44-45 "they had everything in common"
-  { number: 5,  construct: 'available',   text: "When my church needs help, I step up without waiting to be asked." },
-  { number: 6,  construct: 'available',   text: "I make myself accessible to the people God has placed in my life to serve." },
-  { number: 7,  construct: 'available',   reverse: true, text: "I tend to sit back and let others handle ministry responsibilities." },
-  { number: 8,  construct: 'available',   text: "I support the vision of my pastor even when it costs me something personally." },
+  // AVAILABLE (5-8) — Acts 2:44-45
+  { number: 5,  construct: 'available',   text: "I show up for my church and my people — not just when it's easy, but when it costs me something." },
+  { number: 6,  construct: 'available',   text: "I'm the kind of person people can count on — if I say I'll be there, I'm there." },
+  { number: 7,  construct: 'available',   reverse: true, text: "I tend to stay on the sidelines — I watch more than I participate." },
+  { number: 8,  construct: 'available',   text: "Even when I'm tired or stretched thin, I still make myself available to serve." },
 
   // TEACHABLE (9-12) — Acts 2:42 "apostles' teaching"
-  { number: 9,  construct: 'teachable',   text: "When my pastor or a spiritual leader corrects me, I receive it without becoming defensive." },
-  { number: 10, construct: 'teachable',   text: "I actively seek feedback on my blind spots — I want people in my life who will tell me the truth." },
-  { number: 11, construct: 'teachable',   reverse: true, text: "I find it hard to change my behavior even when I know correction is right." },
-  { number: 12, construct: 'teachable',   text: "I submit to spiritual authority even when I don't fully understand the decision." },
+  { number: 9,  construct: 'teachable',   text: "When someone I trust tells me something hard about myself, I can receive it without shutting down." },
+  { number: 10, construct: 'teachable',   text: "I'm willing to be wrong — I don't have to be right to feel secure." },
+  { number: 11, construct: 'teachable',   reverse: true, text: "I struggle to take correction from people — even when I know they're right." },
+  { number: 12, construct: 'teachable',   text: "I'm still learning — I don't act like I've arrived or already know everything." },
 
   // WORD DEPTH (13-16) — Acts 2:42 "devoted to the apostles' teaching"
-  { number: 13, construct: 'bible_depth', text: "I study the Word beyond what I hear on Sunday — I dig into context, meaning, and application." },
-  { number: 14, construct: 'bible_depth', text: "I can explain what I believe and back it up with Scripture." },
-  { number: 15, construct: 'bible_depth', reverse: true, text: "I rely mostly on sermons and other people's teaching rather than studying for myself." },
-  { number: 16, construct: 'bible_depth', text: "When I read the Word, I apply it to my life — not just receive it as information." },
+  { number: 13, construct: 'bible_depth', text: "I spend real time in the Word — not just reading it, but trying to understand what it means for my life." },
+  { number: 14, construct: 'bible_depth', text: "When I go through something hard, the Word is where I go first — not social media, not people." },
+  { number: 15, construct: 'bible_depth', reverse: true, text: "Most of what I know about the Bible comes from what I hear on Sunday — I don't study much on my own." },
+  { number: 16, construct: 'bible_depth', text: "I can connect what I read in Scripture to what's actually happening in my life right now." },
 
-  // PRAYER & FASTING (17-20) — Acts 2:42 "prayers" / COGIC tarrying culture
-  { number: 17, construct: 'time_god',    text: "Prayer is a structured, daily discipline in my life — I have set times and I keep them." },
-  { number: 18, construct: 'time_god',    text: "Fasting is a regular part of my spiritual rhythm, not just something I do in a crisis." },
-  { number: 19, construct: 'time_god',    text: "When the church calls a corporate fast or prayer gathering, I participate fully." },
-  { number: 20, construct: 'time_god',    reverse: true, text: "I pray more when things are hard than as a consistent daily practice." },
-  // OUTREACH (21-24) — Acts 1:8 / Great Commission Matt 28:19
-  { number: 21, construct: 'outreach',    text: "I intentionally build relationships with people who don't know God — I'm in their world on purpose." },
-  { number: 22, construct: 'outreach',    text: "I share my faith regularly — not just when the moment falls in my lap." },
-  { number: 23, construct: 'outreach',    reverse: true, text: "Evangelism feels like someone else's assignment — I support it but don't lead it." },
-  { number: 24, construct: 'outreach',    text: "I invite people into the life of the church as a natural part of how I live." },
+  // PRAYER & FASTING (17-20) — Acts 2:42 "prayers"
+  { number: 17, construct: 'time_god',    text: "Prayer is a real part of my daily life — not just something I do before meals or when I'm scared." },
+  { number: 18, construct: 'time_god',    text: "I've fasted before — I know what it means to deny myself to seek God." },
+  { number: 19, construct: 'time_god',    text: "When my church comes together to pray or fast, I participate — I don't sit that out." },
+  { number: 20, construct: 'time_god',    reverse: true, text: "Honestly, I only really pray when something goes wrong or I need something." },
+
+  // OUTREACH (21-24) — Acts 1:8 / Great Commission
+  { number: 21, construct: 'outreach',    text: "I talk about my faith with people outside the church — it's not something I keep to myself." },
+  { number: 22, construct: 'outreach',    text: "I'm intentional about the people around me who don't know God — I'm building real relationships with them." },
+  { number: 23, construct: 'outreach',    reverse: true, text: "Sharing my faith feels uncomfortable — I'd rather just live it out and hope people notice." },
+  { number: 24, construct: 'outreach',    text: "I bring people into what God is doing in my life — I don't keep my faith private." },
 
   // DISCIPLESHIP (25-28) — Great Commission "teaching them to obey"
-  { number: 25, construct: 'discipleship', text: "I am actively pouring into someone else's spiritual growth right now." },
-  { number: 26, construct: 'discipleship', text: "I think about multiplication — not just my own growth but who I'm raising up." },
-  { number: 27, construct: 'discipleship', reverse: true, text: "I feel like I need to be further along before I can pour into someone else." },
-  { number: 28, construct: 'discipleship', text: "I can identify what God is doing in someone and help draw it out." },
+  { number: 25, construct: 'discipleship', text: "I'm actively pouring into someone else right now — walking with them, checking on them, helping them grow." },
+  { number: 26, construct: 'discipleship', text: "I think about who I'm raising up — not just my own growth, but who's coming behind me." },
+  { number: 27, construct: 'discipleship', reverse: true, text: "I feel like I need to have it all together before I can help anyone else." },
+  { number: 28, construct: 'discipleship', text: "I can see what God is doing in people around me and I try to help draw it out." },
 
-  // STEWARDSHIP — TIME (29-30) — 3 T's
-  { number: 29, construct: 'time_steward', text: "My calendar reflects Kingdom priorities — God, family, ministry, work — in that order." },
-  { number: 30, construct: 'time_steward', reverse: true, text: "I'm more reactive than intentional about how I spend my time." },
+  // STEWARDSHIP — TIME (29-30)
+  { number: 29, construct: 'time_steward', text: "I'm intentional about how I spend my time — I don't just let life happen to me." },
+  { number: 30, construct: 'time_steward', reverse: true, text: "I waste a lot of time on things that don't really matter and I know it." },
 
-  // STEWARDSHIP — TALENT (31-32) — 3 T's / Acts 1:8 "you shall receive power"
-  { number: 31, construct: 'talent',       text: "I know what gifts and abilities God has given me and I'm actively using them for the Kingdom." },
-  { number: 32, construct: 'talent',       reverse: true, text: "I know I have gifts but I haven't fully stepped into using them yet." },
+  // STEWARDSHIP — TALENT (31-32)
+  { number: 31, construct: 'talent',       text: "I know what I'm gifted at and I'm using it — I'm not sitting on what God put in me." },
+  { number: 32, construct: 'talent',       reverse: true, text: "I know I have gifts but I haven't really stepped into them yet — I keep waiting." },
 
-  // STEWARDSHIP — TREASURE (33-35) — Acts 2:45 / Great Commandment
-  { number: 33, construct: 'treasure',     text: "I tithe consistently — it's the first thing I give, not what's left over." },
-  { number: 34, construct: 'treasure',     text: "I give offerings beyond my tithe when I'm led by the Spirit." },
-  { number: 35, construct: 'treasure',     reverse: true, text: "Financial pressure makes it hard for me to give consistently right now." },
+  // STEWARDSHIP — TREASURE (33-35)
+  { number: 33, construct: 'treasure',     text: "I give to God first — before bills, before anything else. That's not a struggle for me." },
+  { number: 34, construct: 'treasure',     text: "I'm generous — when I see a need and I have something to give, I give it." },
+  { number: 35, construct: 'treasure',     reverse: true, text: "Money is a real pressure in my life right now and it affects how I give." },
 
-  // CULTURAL ALIGNMENT (36-37) — Acts 2:42 "fellowship" / COGIC honor culture
-  { number: 36, construct: 'alignment',    text: "I speak well of my pastor and church leadership — I don't murmur or complain." },
-  { number: 37, construct: 'alignment',    reverse: true, text: "When I disagree with leadership, I tend to talk to others before going to the source." },
-
-  // CONFLICT & ACCOUNTABILITY (38-40) — Great Commandment / Matthew 18
-  { number: 38, construct: 'alignment',    text: "When there's conflict, I go directly to the person — I don't avoid it or go around them." },
-  { number: 39, construct: 'alignment',    text: "I have people in my life who have real access to hold me accountable — not just people who agree with me." },
-  { number: 40, construct: 'alignment',    reverse: true, text: "I struggle with submission when I feel like I know better than the person leading me." },
+  // CULTURAL ALIGNMENT (36-40) — honor, accountability, conflict
+  { number: 36, construct: 'alignment',    text: "I speak well of my leaders — I don't talk about them behind their back." },
+  { number: 37, construct: 'alignment',    reverse: true, text: "When I have a problem with someone, I tend to talk to other people about it before I go to them directly." },
+  { number: 38, construct: 'alignment',    text: "I deal with conflict directly — I go to the person, not around them." },
+  { number: 39, construct: 'alignment',    text: "I have real people in my life who can check me — not just people who agree with everything I do." },
+  { number: 40, construct: 'alignment',    reverse: true, text: "I have a hard time submitting to authority — especially when I think I know better." },
 ];
 
 export interface S2Row {
