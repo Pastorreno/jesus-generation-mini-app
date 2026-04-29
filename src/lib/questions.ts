@@ -1,274 +1,78 @@
-export interface S1Question {
+// ─── SECTION 1: SPIRITUAL MATURITY INDEX (Likert 1-5) ────────────────────────
+// Scale: 1=Never  2=Rarely  3=Sometimes  4=Often  5=Always
+// 40 items across 12 constructs — built on Acts 2:42-47, Great Commission,
+// Great Commandment, Acts 1:8 — COGIC/Pentecostal/Apostolic voice
+
+export interface S1LikertItem {
   number: number;
   text: string;
-  options: { label: 'A' | 'B' | 'C' | 'D'; text: string }[];
+  construct: string;
+  reverse?: boolean; // true = high score means low trait (scored inverted)
 }
 
-export const S1_QUESTIONS: S1Question[] = [
-  // Q1 — bible_depth (Comprehension) — how you engage the Word
-  {
-    number: 1,
-    text: "When you read the Bible, what's most true about how you engage it?",
-    options: [
-      { label: 'A', text: "I read it when I need answers or feel off — it's my go-to when life gets hard" },
-      { label: 'B', text: "I study it consistently — I want to understand what it actually means, not just what it says" },
-      { label: 'C', text: "I mostly hear it through sermons and other people's teaching" },
-      { label: 'D', text: "I struggle to stay consistent — I know I should read more than I do" },
-    ],
-  },
-  // Q2 — faithful (Character / FAT) — spiritual discipline honesty
-  {
-    number: 2,
-    text: "Be honest — when life gets busy, what's the first thing that gets cut?",
-    options: [
-      { label: 'A', text: "Nothing — my time with God is the one thing I protect no matter what" },
-      { label: 'B', text: "Prayer and Bible reading — I tell myself I'll catch up later" },
-      { label: 'C', text: "Church attendance — I still pray and read at home" },
-      { label: 'D', text: "Everything spiritual takes a hit when the pressure is on" },
-    ],
-  },
-  // Q3 — outreach (Competency) — natural witness
-  {
-    number: 3,
-    text: "When you think about sharing your faith with people who don't know God, you feel:",
-    options: [
-      { label: 'A', text: "Natural — I talk about God the same way I talk about anything else I love" },
-      { label: 'B', text: "Willing but unsure — I want to but I don't always know what to say" },
-      { label: 'C', text: "Uncomfortable — I'd rather live it out than talk about it" },
-      { label: 'D', text: "Like that's the pastor's job — I support from the background" },
-    ],
-  },
-  // Q4 — coaching (Competency) — how you help others grow
-  {
-    number: 4,
-    text: "When you see someone close to you making a decision you know will hurt them, you:",
-    options: [
-      { label: 'A', text: "Mind your business — people have to learn on their own" },
-      { label: 'B', text: "Say something directly because you love them too much to stay quiet" },
-      { label: 'C', text: "Ask questions to help them think it through themselves" },
-      { label: 'D', text: "Pray for them and wait for the right moment" },
-    ],
-  },
-  // Q5 — time_god (3 T's / Time) — how you seek God
-  {
-    number: 5,
-    text: "When you need to hear from God about something important, what do you actually do?",
-    options: [
-      { label: 'A', text: "Fast and pray — I pull away from everything until I get clarity" },
-      { label: 'B', text: "Talk to my pastor or someone I trust spiritually" },
-      { label: 'C', text: "Get in the Word and journal until something speaks to me" },
-      { label: 'D', text: "Wait and trust that God will make it clear in His own time" },
-    ],
-  },
-  // Q6 — available (Character / FAT) — how you show up
-  {
-    number: 6,
-    text: "When your church or community needs help and you're already stretched thin, you:",
-    options: [
-      { label: 'A', text: "Show up anyway — if God called me to this house, I'm available" },
-      { label: 'B', text: "Help where I can without overcommitting" },
-      { label: 'C', text: "Sit this one out — I can't pour from an empty cup" },
-      { label: 'D', text: "Pray about it first before I commit to anything" },
-    ],
-  },
-  // Q7 — bible_depth (Comprehension) — doctrinal confidence
-  {
-    number: 7,
-    text: "Someone challenges something you believe about God or the Bible. How do you handle it?",
-    options: [
-      { label: 'A', text: "I study it out — I won't defend something I can't back up with Scripture" },
-      { label: 'B', text: "I share what I believe and why, even if I can't quote chapter and verse" },
-      { label: 'C', text: "I listen and honestly consider whether they might have a point" },
-      { label: 'D', text: "I point them to my pastor — that's above my level" },
-    ],
-  },
-  // Q8 — discipleship (Comprehension) — investment in others
-  {
-    number: 8,
-    text: "Right now, are you actively pouring into someone else's spiritual growth?",
-    options: [
-      { label: 'A', text: "Yes — I'm intentionally walking with someone and tracking their growth" },
-      { label: 'B', text: "Informally — I encourage people but it's not structured" },
-      { label: 'C', text: "Not yet — I'm still being poured into myself" },
-      { label: 'D', text: "I want to but I don't feel equipped enough yet" },
-    ],
-  },
-  // Q9 — treasure (3 T's) — financial stewardship
-  {
-    number: 9,
-    text: "When it comes to money and giving, which is most honest about where you are right now?",
-    options: [
-      { label: 'A', text: "I tithe consistently — it's the first check I write, not the last" },
-      { label: 'B', text: "I give when I can but I'm not consistent about it" },
-      { label: 'C', text: "I'm working through financial pressure right now — giving is hard" },
-      { label: 'D', text: "I believe in giving but I haven't made it a real discipline yet" },
-    ],
-  },
-  // Q10 — outreach (Competency) — intentional relationships
-  {
-    number: 10,
-    text: "Think about the people in your life who don't know God. What's your honest posture toward them?",
-    options: [
-      { label: 'A', text: "I'm building real relationships with them — I'm in their world on purpose" },
-      { label: 'B', text: "I pray for them but I haven't made a real move toward them" },
-      { label: 'C', text: "I invite them to church and hope they come" },
-      { label: 'D', text: "Most people in my life are already saved" },
-    ],
-  },
-  // Q11 — faithful (Character / FAT) — follow-through
-  {
-    number: 11,
-    text: "You make a spiritual commitment — a fast, a prayer challenge, a reading plan. What usually happens?",
-    options: [
-      { label: 'A', text: "I finish what I start — my word to God means something" },
-      { label: 'B', text: "I start strong but life usually interrupts before I finish" },
-      { label: 'C', text: "I restart when I miss — I don't let one bad day end the whole thing" },
-      { label: 'D', text: "I've stopped making big commitments because I don't want to break them" },
-    ],
-  },
-  // Q12 — bible_depth (Comprehension) — Word application
-  {
-    number: 12,
-    text: "When you hear a sermon or read a passage, what do you typically do with it?",
-    options: [
-      { label: 'A', text: "I study it deeper on my own — I want to understand the full context" },
-      { label: 'B', text: "I let it sit with me and apply what stands out" },
-      { label: 'C', text: "I share it with someone else — teaching it helps me retain it" },
-      { label: 'D', text: "I receive it in the moment but don't always follow through on it" },
-    ],
-  },
-  // Q13 — discipleship (Comprehension) — pastoral instinct
-  {
-    number: 13,
-    text: "Someone you care about is going through something hard and pulling away from God. What do you do?",
-    options: [
-      { label: 'A', text: "Give them space — pushing people usually makes it worse" },
-      { label: 'B', text: "Reach out, sit with them, and stay present even when it's uncomfortable" },
-      { label: 'C', text: "Pray for them and trust God to draw them back" },
-      { label: 'D', text: "Point them to the pastor or someone more equipped to help" },
-    ],
-  },
-  // Q14 — treasure (3 T's) — time stewardship
-  {
-    number: 14,
-    text: "If someone looked at your calendar for the last 30 days, what would it say about your priorities?",
-    options: [
-      { label: 'A', text: "God, family, and ministry are clearly at the top — it shows" },
-      { label: 'B', text: "Work and responsibilities take most of it — I'm trying to rebalance" },
-      { label: 'C', text: "It's scattered — I'm reactive more than intentional" },
-      { label: 'D', text: "Honestly, it would show I need to make some changes" },
-    ],
-  },
-  // Q15 — available (Character / FAT) — submission and honor
-  {
-    number: 15,
-    text: "How do you respond when leadership makes a decision you don't agree with?",
-    options: [
-      { label: 'A', text: "I bring my concerns privately, then fully support the decision once it's made" },
-      { label: 'B', text: "I say what I think — I believe in honest communication" },
-      { label: 'C', text: "I go along with it but I hold my position internally" },
-      { label: 'D', text: "I struggle with this — submission is something I'm still working on" },
-    ],
-  },
-  // Q16 — faithful (Character / FAT) — prayer life honesty
-  {
-    number: 16,
-    text: "How would you honestly describe your prayer life right now?",
-    options: [
-      { label: 'A', text: "Consistent and structured — I have set times and I keep them" },
-      { label: 'B', text: "Active but mostly spontaneous — I pray throughout the day" },
-      { label: 'C', text: "Inconsistent — I pray more when things are hard" },
-      { label: 'D', text: "Weak right now — I know it needs to grow" },
-    ],
-  },
-  // Q17 — discipleship (Comprehension) — multiplication mindset
-  {
-    number: 17,
-    text: "What do you think is the main job of a mature believer in the church?",
-    options: [
-      { label: 'A', text: "To serve faithfully in whatever role they're given" },
-      { label: 'B', text: "To raise up the next generation — make disciples who make disciples" },
-      { label: 'C', text: "To grow personally and keep their own house in order" },
-      { label: 'D', text: "To support the vision of the pastor and leadership" },
-    ],
-  },
-  // Q18 — teachable (Character / FAT) — receiving correction
-  {
-    number: 18,
-    text: "When someone you respect points out something in your character that needs to change, your honest first reaction is:",
-    options: [
-      { label: 'A', text: "Gratitude — I want people in my life who will tell me the truth" },
-      { label: 'B', text: "Defensiveness — even if I know they're right" },
-      { label: 'C', text: "I receive it in the moment but struggle to actually change" },
-      { label: 'D', text: "It depends on who's saying it and how they say it" },
-    ],
-  },
-  // Q19 — outreach (Competency) — evangelism frequency
-  {
-    number: 19,
-    text: "When was the last time you intentionally shared your faith with someone who doesn't know God?",
-    options: [
-      { label: 'A', text: "This week" },
-      { label: 'B', text: "This month" },
-      { label: 'C', text: "A few months ago" },
-      { label: 'D', text: "Honestly, I'm not sure — it's been a while" },
-    ],
-  },
-  // Q20 — available (Character / FAT) — conflict and accountability
-  {
-    number: 20,
-    text: "When there's tension or conflict in your church or ministry team, what's your natural response?",
-    options: [
-      { label: 'A', text: "Address it directly — unresolved conflict kills community" },
-      { label: 'B', text: "Pray about it and wait for God to resolve it" },
-      { label: 'C', text: "Pull back until things settle down" },
-      { label: 'D', text: "Try to be a peacemaker and bring both sides together" },
-    ],
-  },
-  // Q21 — time_god (3 T's / Time) — corporate worship and fasting
-  {
-    number: 21,
-    text: "How do you feel about fasting as a spiritual discipline?",
-    options: [
-      { label: 'A', text: "It's a regular part of my life — I fast with purpose and structure" },
-      { label: 'B', text: "I fast when something is urgent but it's not a regular rhythm" },
-      { label: 'C', text: "I've tried it but I struggle to complete what I commit to" },
-      { label: 'D', text: "I haven't really practiced fasting — it's something I want to grow in" },
-    ],
-  },
-  // Q22 — coaching (Competency) — how you restore people
-  {
-    number: 22,
-    text: "Someone you're close to just made a major mistake — spiritually or personally. How do you show up for them?",
-    options: [
-      { label: 'A', text: "Give them space to process — they'll come to me when they're ready" },
-      { label: 'B', text: "Show up immediately — they need to know they're not alone" },
-      { label: 'C', text: "Ask questions to help them find the lesson without making them feel judged" },
-      { label: 'D', text: "Share my own story so they know failure isn't the end" },
-    ],
-  },
-  // Q23 — treasure (3 T's) — talent stewardship
-  {
-    number: 23,
-    text: "When you think about the gifts and abilities God has given you, which is most true?",
-    options: [
-      { label: 'A', text: "I know what they are and I'm actively using them for the Kingdom" },
-      { label: 'B', text: "I have a sense of my gifts but I'm not fully walking in them yet" },
-      { label: 'C', text: "I'm still figuring out what my gifts actually are" },
-      { label: 'D', text: "I've been using my gifts more for myself than for God" },
-    ],
-  },
-  // Q24 — coaching (Competency) — readiness to invest
-  {
-    number: 24,
-    text: "What would it take for you to feel ready to pour into someone else's spiritual growth?",
-    options: [
-      { label: 'A', text: "I'm already doing it — you don't have to be perfect to pour into people" },
-      { label: 'B', text: "More training and knowledge — I want to make sure I'm equipped" },
-      { label: 'C', text: "More consistency in my own walk first" },
-      { label: 'D', text: "Someone to show me how — I've never been discipled myself" },
-    ],
-  },
+export const S1_ITEMS: S1LikertItem[] = [
+  // FAITHFUL (1-5) — Acts 2:42 "devoted themselves"
+  { number: 1,  construct: 'faithful',    text: "I keep my spiritual commitments — fasts, prayer challenges, reading plans — even when life gets hard." },
+  { number: 2,  construct: 'faithful',    text: "My time with God is the last thing I cut when my schedule gets full." },
+  { number: 3,  construct: 'faithful',    text: "I show up to corporate worship and prayer gatherings consistently, not just when it's convenient." },
+  { number: 4,  construct: 'faithful',    reverse: true, text: "I go through seasons where my spiritual disciplines completely fall off." },
+
+  // AVAILABLE (6-9) — Acts 2:44-45 "they had everything in common"
+  { number: 5,  construct: 'available',   text: "When my church needs help, I step up without waiting to be asked." },
+  { number: 6,  construct: 'available',   text: "I make myself accessible to the people God has placed in my life to serve." },
+  { number: 7,  construct: 'available',   reverse: true, text: "I tend to sit back and let others handle ministry responsibilities." },
+  { number: 8,  construct: 'available',   text: "I support the vision of my pastor even when it costs me something personally." },
+
+  // TEACHABLE (9-12) — Acts 2:42 "apostles' teaching"
+  { number: 9,  construct: 'teachable',   text: "When my pastor or a spiritual leader corrects me, I receive it without becoming defensive." },
+  { number: 10, construct: 'teachable',   text: "I actively seek feedback on my blind spots — I want people in my life who will tell me the truth." },
+  { number: 11, construct: 'teachable',   reverse: true, text: "I find it hard to change my behavior even when I know correction is right." },
+  { number: 12, construct: 'teachable',   text: "I submit to spiritual authority even when I don't fully understand the decision." },
+
+  // WORD DEPTH (13-16) — Acts 2:42 "devoted to the apostles' teaching"
+  { number: 13, construct: 'bible_depth', text: "I study the Word beyond what I hear on Sunday — I dig into context, meaning, and application." },
+  { number: 14, construct: 'bible_depth', text: "I can explain what I believe and back it up with Scripture." },
+  { number: 15, construct: 'bible_depth', reverse: true, text: "I rely mostly on sermons and other people's teaching rather than studying for myself." },
+  { number: 16, construct: 'bible_depth', text: "When I read the Word, I apply it to my life — not just receive it as information." },
+
+  // PRAYER & FASTING (17-20) — Acts 2:42 "prayers" / COGIC tarrying culture
+  { number: 17, construct: 'time_god',    text: "Prayer is a structured, daily discipline in my life — I have set times and I keep them." },
+  { number: 18, construct: 'time_god',    text: "Fasting is a regular part of my spiritual rhythm, not just something I do in a crisis." },
+  { number: 19, construct: 'time_god',    text: "When the church calls a corporate fast or prayer gathering, I participate fully." },
+  { number: 20, construct: 'time_god',    reverse: true, text: "I pray more when things are hard than as a consistent daily practice." },
+  // OUTREACH (21-24) — Acts 1:8 / Great Commission Matt 28:19
+  { number: 21, construct: 'outreach',    text: "I intentionally build relationships with people who don't know God — I'm in their world on purpose." },
+  { number: 22, construct: 'outreach',    text: "I share my faith regularly — not just when the moment falls in my lap." },
+  { number: 23, construct: 'outreach',    reverse: true, text: "Evangelism feels like someone else's assignment — I support it but don't lead it." },
+  { number: 24, construct: 'outreach',    text: "I invite people into the life of the church as a natural part of how I live." },
+
+  // DISCIPLESHIP (25-28) — Great Commission "teaching them to obey"
+  { number: 25, construct: 'discipleship', text: "I am actively pouring into someone else's spiritual growth right now." },
+  { number: 26, construct: 'discipleship', text: "I think about multiplication — not just my own growth but who I'm raising up." },
+  { number: 27, construct: 'discipleship', reverse: true, text: "I feel like I need to be further along before I can pour into someone else." },
+  { number: 28, construct: 'discipleship', text: "I can identify what God is doing in someone and help draw it out." },
+
+  // STEWARDSHIP — TIME (29-30) — 3 T's
+  { number: 29, construct: 'time_steward', text: "My calendar reflects Kingdom priorities — God, family, ministry, work — in that order." },
+  { number: 30, construct: 'time_steward', reverse: true, text: "I'm more reactive than intentional about how I spend my time." },
+
+  // STEWARDSHIP — TALENT (31-32) — 3 T's / Acts 1:8 "you shall receive power"
+  { number: 31, construct: 'talent',       text: "I know what gifts and abilities God has given me and I'm actively using them for the Kingdom." },
+  { number: 32, construct: 'talent',       reverse: true, text: "I know I have gifts but I haven't fully stepped into using them yet." },
+
+  // STEWARDSHIP — TREASURE (33-35) — Acts 2:45 / Great Commandment
+  { number: 33, construct: 'treasure',     text: "I tithe consistently — it's the first thing I give, not what's left over." },
+  { number: 34, construct: 'treasure',     text: "I give offerings beyond my tithe when I'm led by the Spirit." },
+  { number: 35, construct: 'treasure',     reverse: true, text: "Financial pressure makes it hard for me to give consistently right now." },
+
+  // CULTURAL ALIGNMENT (36-37) — Acts 2:42 "fellowship" / COGIC honor culture
+  { number: 36, construct: 'alignment',    text: "I speak well of my pastor and church leadership — I don't murmur or complain." },
+  { number: 37, construct: 'alignment',    reverse: true, text: "When I disagree with leadership, I tend to talk to others before going to the source." },
+
+  // CONFLICT & ACCOUNTABILITY (38-40) — Great Commandment / Matthew 18
+  { number: 38, construct: 'alignment',    text: "When there's conflict, I go directly to the person — I don't avoid it or go around them." },
+  { number: 39, construct: 'alignment',    text: "I have people in my life who have real access to hold me accountable — not just people who agree with me." },
+  { number: 40, construct: 'alignment',    reverse: true, text: "I struggle with submission when I feel like I know better than the person leading me." },
 ];
 
 export interface S2Row {
@@ -362,4 +166,67 @@ export const S4_QUESTIONS: S4Question[] = [
   { number: 69, giftA: 'knowledge',     optionA: "I receive words of knowledge that confirm God's presence and direction.",          giftB: 'faith',         optionB: "I carry a settled confidence that God is working even when I can't see it." },
   { number: 70, giftA: 'miracles',      optionA: "I believe God still parts waters — and I pray like it.",                           giftB: 'healing',       optionB: "I feel a specific anointing to pray for physical and emotional restoration." },
   { number: 71, giftA: 'discernment',   optionA: "I'm often the one who senses when a spiritual door has been opened that shouldn't be.", giftB: 'interpretation', optionB: "I feel called to help the church understand what God is communicating through spiritual gifts." },
+];
+
+// ─── SECTION 5: LEADERSHIP STYLE (8 forced-choice pairs) ────────────────────
+// Reveals dominant style: Director / Coach / Supporter / Delegator
+
+export interface S5Question {
+  number: number;
+  optionA: string; styleA: string;
+  optionB: string; styleB: string;
+}
+
+export const S5_QUESTIONS: S5Question[] = [
+  { number: 101, styleA: 'director',   optionA: "I tell people clearly what needs to happen and expect it to get done.",           styleB: 'coach',      optionB: "I ask questions and help people figure out the best path themselves." },
+  { number: 102, styleA: 'supporter',  optionA: "I make sure everyone on the team feels heard and valued before we move.",         styleB: 'delegator',  optionB: "I hand off responsibility and trust people to run with it." },
+  { number: 103, styleA: 'director',   optionA: "When a decision needs to be made, I make it — I don't wait for consensus.",       styleB: 'supporter',  optionB: "I build agreement before moving — I want everyone bought in." },
+  { number: 104, styleA: 'coach',      optionA: "I invest heavily in developing the people around me — their growth is my job.",   styleB: 'delegator',  optionB: "I give people ownership and get out of the way — micromanaging kills growth." },
+  { number: 105, styleA: 'director',   optionA: "I set the vision and the standard — people know what I expect.",                  styleB: 'coach',      optionB: "I walk alongside people — I'm more interested in who they're becoming than what they're producing." },
+  { number: 106, styleA: 'supporter',  optionA: "I lead by serving — I remove obstacles so my team can do their best work.",       styleB: 'director',   optionB: "I lead by example — I set the pace and people follow." },
+  { number: 107, styleA: 'coach',      optionA: "I give honest, direct feedback because I believe in the person's potential.",     styleB: 'supporter',  optionB: "I affirm and encourage — people grow best when they feel safe." },
+  { number: 108, styleA: 'delegator',  optionA: "I trust people with real responsibility — I don't need to be in every decision.", styleB: 'coach',      optionB: "I stay close to the people I'm developing — I want to see their process, not just their results." },
+];
+
+// ─── SECTION 6: EMOTIONAL INTELLIGENCE (20 Likert items, 1-5) ────────────────
+// Scale: 1=Never  2=Rarely  3=Sometimes  4=Often  5=Always
+// 5 constructs × 4 items — Psychology meets Jesus
+
+export interface S6LikertItem {
+  number: number;
+  text: string;
+  construct: string;
+  reverse?: boolean;
+}
+
+export const S6_ITEMS: S6LikertItem[] = [
+  // SELF-AWARENESS
+  { number: 111, construct: 'self_awareness',   text: "I know my emotional triggers and can name them before they control me." },
+  { number: 112, construct: 'self_awareness',   text: "I can tell when my mood is affecting how I treat people." },
+  { number: 113, construct: 'self_awareness',   reverse: true, text: "I'm often surprised when people tell me how I came across in a conversation." },
+  { number: 114, construct: 'self_awareness',   text: "I understand my patterns — why I respond the way I do under pressure." },
+
+  // SELF-REGULATION
+  { number: 115, construct: 'self_regulation',  text: "I can feel strong emotions without letting them drive my decisions." },
+  { number: 116, construct: 'self_regulation',  text: "When I'm frustrated or hurt, I process it before I respond." },
+  { number: 117, construct: 'self_regulation',  reverse: true, text: "I say things in the heat of the moment that I later regret." },
+  { number: 118, construct: 'self_regulation',  text: "I can stay calm and focused when the pressure is high." },
+
+  // EMPATHY
+  { number: 119, construct: 'empathy',          text: "I can sense when someone is hurting even when they haven't said anything." },
+  { number: 120, construct: 'empathy',          text: "I listen to understand, not just to respond." },
+  { number: 121, construct: 'empathy',          reverse: true, text: "I find it hard to connect with people whose experiences are very different from mine." },
+  { number: 122, construct: 'empathy',          text: "People feel safe being honest with me — they know I won't judge them." },
+
+  // SOCIAL AWARENESS
+  { number: 123, construct: 'social_awareness', text: "I can read the atmosphere in a room and adjust how I engage." },
+  { number: 124, construct: 'social_awareness', text: "I notice group dynamics — who has influence, who's disengaged, what's unspoken." },
+  { number: 125, construct: 'social_awareness', reverse: true, text: "I sometimes miss social cues that others pick up on naturally." },
+  { number: 126, construct: 'social_awareness', text: "I'm aware of how my presence and energy affect the people around me." },
+
+  // RELATIONSHIP MANAGEMENT
+  { number: 127, construct: 'rel_management',   text: "I build trust with people over time — I'm consistent, not just warm in the moment." },
+  { number: 128, construct: 'rel_management',   text: "I can navigate conflict without damaging the relationship." },
+  { number: 129, construct: 'rel_management',   reverse: true, text: "I tend to pull back from relationships when things get complicated." },
+  { number: 130, construct: 'rel_management',   text: "I invest in people's development — I help them grow, not just get things done." },
 ];
