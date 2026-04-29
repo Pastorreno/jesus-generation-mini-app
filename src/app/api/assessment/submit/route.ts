@@ -10,6 +10,55 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const GROUP_CHAT_ID = process.env.TELEGRAM_GROUP_CHAT_ID;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://telegram-mini-app-beta-coral.vercel.app';
 
+async function syncToSheets(data: {
+  name: string; email: string | null; phone: string | null;
+  level: number; levelName: string; lps: number;
+  character: number; competency: number; comprehension: number; alignment: number; stewardship: number;
+  animalPrimary: string; llPrimary: string;
+  giftPrimary: string; giftSecondary: string; giftTertiary: string;
+  leadershipStyle: string; eqOverall: number; botMode: string;
+}) {
+  try {
+    const sheetId = process.env.GOOGLE_SHEET_ID;
+    const saCreds = process.env.GOOGLE_SERVICE_ACCOUNT;
+    if (!sheetId || !saCreds) return;
+
+    const sa = JSON.parse(saCreds);
+    const { google } = await import('googleapis');
+    const auth = new google.auth.GoogleAuth({
+      credentials: sa,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Add header if sheet is empty
+    const existing = await sheets.spreadsheets.values.get({ spreadsheetId: sheetId, range: 'Sheet1!A1' });
+    if (!existing.data.values?.length) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: sheetId, range: 'Sheet1!A1',
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [['Date','Name','Email','Phone','Level','Level Name','LPS Score','Character','Competency','Comprehension','Alignment','Stewardship','Temperament','Love Language','Gift 1','Gift 2','Gift 3','Leadership Style','EQ Score','Bot Mode']] },
+      });
+    }
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId, range: 'Sheet1!A1',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [[
+        new Date().toLocaleString(),
+        data.name, data.email ?? '', data.phone ?? '',
+        data.level, data.levelName, data.lps,
+        data.character, data.competency, data.comprehension, data.alignment, data.stewardship,
+        data.animalPrimary, data.llPrimary,
+        data.giftPrimary, data.giftSecondary, data.giftTertiary,
+        data.leadershipStyle, data.eqOverall, data.botMode,
+      ]] },
+    });
+  } catch (err) {
+    console.error('Sheets sync error:', err);
+  }
+}
+
 async function notifyGroup(name: string, memberId: string, level: number, levelName: string, lps: number) {
   if (!BOT_TOKEN || !GROUP_CHAT_ID) return;
   const emoji = ['','🌱','🔨','🌿','🎯','🔥'][level] ?? '⭐';
@@ -185,6 +234,17 @@ export async function POST(req: NextRequest) {
     }
 
     notifyGroup(intake.name.trim(), memberSlug, level.level, level.name, s1Result.lps).catch(console.error);
+
+    syncToSheets({
+      name: intake.name.trim(), email: intake.email.trim() || null, phone: intake.phone.trim() || null,
+      level: level.level, levelName: level.name, lps: s1Result.lps,
+      character: s1Result.character, competency: s1Result.competency,
+      comprehension: s1Result.comprehension, alignment: s1Result.alignment, stewardship: s1Result.stewardship,
+      animalPrimary: animals.primary, llPrimary: ll.primary,
+      giftPrimary: gifts?.primary ?? '', giftSecondary: gifts?.secondary ?? '', giftTertiary: gifts?.tertiary ?? '',
+      leadershipStyle: leadership?.primary ?? '', eqOverall: eq?.overall ?? 0,
+      botMode: level.level <= 1 ? 'care' : level.level <= 2 ? 'companion' : 'coach',
+    }).catch(console.error);
 
     return NextResponse.json({ leaderId: memberSlug });
   } catch (err) {
