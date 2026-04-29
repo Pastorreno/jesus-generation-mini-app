@@ -8,65 +8,65 @@ export const S1_QUESTIONS: S1Question[] = [
   // Q1 — bible_depth (Comprehension)
   {
     number: 1,
-    text: "During a Bible study or discipleship meeting, someone asks what a passage means and you're not sure. You:",
+    text: "Someone at Bible study asks you to explain a passage and you don't know it well. What do you do?",
     options: [
-      { label: 'A', text: "Give your best guess and move on" },
-      { label: 'B', text: "Say you're not sure and commit to studying it together before next week" },
-      { label: 'C', text: "Change the subject to a passage you know well" },
-      { label: 'D', text: "Quote a related verse even though it doesn't directly answer the question" },
+      { label: 'A', text: "Give your best guess and keep it moving" },
+      { label: 'B', text: "Tell them you're not sure and commit to studying it together before next time" },
+      { label: 'C', text: "Redirect to a passage you do know" },
+      { label: 'D', text: "Quote something related even if it doesn't really answer the question" },
     ],
   },
   // Q2 — faithful (Character / FAT)
   {
     number: 2,
-    text: "Acts 2:42 says the early church devoted themselves to the apostles' teaching, fellowship, breaking of bread, and prayer. How consistent are your personal spiritual disciplines right now?",
+    text: "Acts 2:42 says the early church devoted themselves to the Word, fellowship, communion, and prayer — every day. How consistent are your personal spiritual disciplines right now?",
     options: [
-      { label: 'A', text: "They are scheduled and protected — I treat them like appointments I don't cancel" },
+      { label: 'A', text: "They're on the calendar and I protect them — I don't cancel on God" },
       { label: 'B', text: "I do them when I feel spiritually motivated" },
-      { label: 'C', text: "I try to combine them with other activities to stay consistent" },
-      { label: 'D', text: "I'm consistent most weeks but allow flexibility when life gets busy" },
+      { label: 'C', text: "I try to squeeze them in wherever I can" },
+      { label: 'D', text: "I'm consistent most of the time but I give myself grace when life gets heavy" },
     ],
   },
   // Q3 — outreach (Competency)
   {
     number: 3,
-    text: "Acts 2:47 says the Lord added to their number daily. When someone outside the church asks why you live differently, you:",
+    text: "Someone at work or in your neighborhood notices something different about you and asks about it. What do you do?",
     options: [
       { label: 'A', text: "Say you just try to stay positive" },
-      { label: 'B', text: "Share your faith clearly and invite them into community" },
-      { label: 'C', text: "Give a vague spiritual answer so you don't make them uncomfortable" },
+      { label: 'B', text: "Tell them about your faith and invite them to church" },
+      { label: 'C', text: "Give a vague spiritual answer so you don't make it awkward" },
       { label: 'D', text: "Tell them you'll share more about it sometime" },
     ],
   },
   // Q4 — coaching (Competency / Teachable)
   {
     number: 4,
-    text: "A newer believer you're walking with keeps repeating the same mistake even after you've addressed it. You:",
+    text: "You're walking with a newer believer and they keep making the same mistake even after you've addressed it. What do you do?",
     options: [
       { label: 'A', text: "Only bring it up again if they ask" },
       { label: 'B', text: "Have a direct, caring conversation about the pattern you're seeing" },
-      { label: 'C', text: "Ask questions to help them discover the issue themselves" },
-      { label: 'D', text: "Step back and let their primary pastor handle it" },
+      { label: 'C', text: "Ask questions to help them see it themselves" },
+      { label: 'D', text: "Step back and let their pastor handle it" },
     ],
   },
   // Q5 — time_god (3 T's / Time)
   {
     number: 5,
-    text: "When you feel spiritually dry or unclear about a decision, your first response is:",
+    text: "You're spiritually dry and unclear about a decision. What's your first move?",
     options: [
-      { label: 'A', text: "Set aside focused time for fasting and prayer to seek God specifically" },
-      { label: 'B', text: "Call your pastor or mentor" },
-      { label: 'C', text: "Read the Word more and journal your thoughts" },
-      { label: 'D', text: "Wait — God will bring clarity in His own time" },
+      { label: 'A', text: "Set aside focused time to fast and pray specifically about it" },
+      { label: 'B', text: "Call your pastor or a trusted mentor" },
+      { label: 'C', text: "Get in the Word and journal until something breaks through" },
+      { label: 'D', text: "Wait — God will bring clarity when it's time" },
     ],
   },
   // Q6 — available (Character / FAT)
   {
     number: 6,
-    text: "Acts 2:44-45 says they had everything in common and gave to anyone who had need. When your church needs hands for a new initiative, you:",
+    text: "Your church launches something new and needs people to step up. What do you do?",
     options: [
       { label: 'A', text: "Show up when it's convenient and help where it's easy" },
-      { label: 'B', text: "Wait to see if the initiative gains traction before committing" },
+      { label: 'B', text: "Wait to see if it gains traction before committing" },
       { label: 'C', text: "Step in early, take ownership of a role, and bring others with you" },
       { label: 'D', text: "Support through prayer and giving but stay in the background" },
     ],
@@ -74,177 +74,177 @@ export const S1_QUESTIONS: S1Question[] = [
   // Q7 — bible_depth (Comprehension)
   {
     number: 7,
-    text: "Someone challenges a core doctrine of your faith. You:",
+    text: "Someone challenges a core doctrine of your faith. How do you respond?",
     options: [
-      { label: 'A', text: "Research it thoroughly in Scripture and trusted commentaries before responding" },
+      { label: 'A', text: "Study it out in Scripture and trusted sources before responding" },
       { label: 'B', text: "Share your general sense of what the Bible seems to say" },
       { label: 'C', text: "Say that's above your level and move on" },
-      { label: 'D', text: "Ask someone more knowledgeable and relay their answer" },
+      { label: 'D', text: "Point them to someone more knowledgeable" },
     ],
   },
   // Q8 — discipleship (Comprehension)
   {
     number: 8,
-    text: "Someone you've been discipling says they feel ready to lead. You:",
+    text: "Someone you've been pouring into says they feel ready to lead. What do you do?",
     options: [
-      { label: 'A', text: "Walk them through a readiness conversation and co-lead with them first" },
-      { label: 'B', text: "Encourage them and hand it off immediately" },
-      { label: 'C', text: "Tell them to shadow you for a few more months" },
-      { label: 'D', text: "Express concern — they need more time in their current role" },
+      { label: 'A', text: "Have a real readiness conversation and co-lead with them first" },
+      { label: 'B', text: "Encourage them and hand it off" },
+      { label: 'C', text: "Tell them to keep shadowing you a little longer" },
+      { label: 'D', text: "Tell them honestly — they're not ready yet" },
     ],
   },
   // Q9 — treasure (3 T's)
   {
     number: 9,
-    text: "Acts 2:45 says they sold possessions and gave to anyone in need. When you receive an unexpected financial blessing, your first instinct is:",
+    text: "God blesses you with unexpected money. What's your first instinct?",
     options: [
-      { label: 'A', text: "Plan carefully how to allocate it across giving, savings, and needs" },
-      { label: 'B', text: "Give a generous portion and enjoy the rest freely" },
-      { label: 'C', text: "Save most of it for future security" },
+      { label: 'A', text: "Plan carefully — giving, savings, and needs in that order" },
+      { label: 'B', text: "Give a generous portion and enjoy the rest" },
+      { label: 'C', text: "Save most of it — you never know what's coming" },
       { label: 'D', text: "Give it all — trust God completely for your own needs" },
     ],
   },
   // Q10 — outreach (Competency)
   {
     number: 10,
-    text: "There are people in your neighborhood or workplace you've never engaged with spiritually. You:",
+    text: "There are people around you — neighbors, coworkers, family — you've never engaged with spiritually. What's your approach?",
     options: [
       { label: 'A', text: "Pray for them and wait for a natural opening" },
-      { label: 'B', text: "Build relationships intentionally with the goal of sharing your faith" },
-      { label: 'C', text: "Invite them to a church event and follow up if they come" },
+      { label: 'B', text: "Build real relationships with the intention of sharing your faith" },
+      { label: 'C', text: "Invite them to church and follow up if they come" },
       { label: 'D', text: "Assume most of them already have a church home" },
     ],
   },
   // Q11 — faithful (Character / FAT)
   {
     number: 11,
-    text: "You committed to a 21-day prayer and fasting challenge. On day 8 you miss a day. You:",
+    text: "You committed to a 21-day fast and prayer challenge. On day 8 you miss a day. What do you do?",
     options: [
       { label: 'A', text: "Feel guilty and scale back your commitment" },
       { label: 'B', text: "Acknowledge the miss and keep going without losing momentum" },
-      { label: 'C', text: "Restart from day one — consistency means zero misses" },
+      { label: 'C', text: "Start over from day one — consistency means no misses" },
       { label: 'D', text: "Reevaluate whether the commitment was realistic" },
     ],
   },
   // Q12 — bible_depth (Comprehension)
   {
     number: 12,
-    text: "Acts 2:42 says they devoted themselves to the apostles' teaching. How would you describe your current relationship with the Word?",
+    text: "Acts 2:42 says they devoted themselves to the apostles' teaching. How would you honestly describe your relationship with the Word right now?",
     options: [
-      { label: 'A', text: "I study it deeply — I use commentaries, original language tools, and apply what I learn" },
+      { label: 'A', text: "I study it deeply — commentaries, context, application — and I live what I learn" },
       { label: 'B', text: "I read it regularly but mostly for personal encouragement" },
-      { label: 'C', text: "I read it when I feel I need direction" },
-      { label: 'D', text: "I rely mostly on sermons and teaching from others" },
+      { label: 'C', text: "I read it when I need direction or feel off" },
+      { label: 'D', text: "I rely mostly on sermons and what I hear from others" },
     ],
   },
   // Q13 — discipleship (Comprehension)
   {
     number: 13,
-    text: "You're discipling someone and they start pulling back and disengaging from the church. You:",
+    text: "Someone you're discipling starts pulling back and missing church. What do you do?",
     options: [
       { label: 'A', text: "Give them space — they'll come around when they're ready" },
-      { label: 'B', text: "Follow up personally, ask what's going on, and create a re-engagement plan" },
-      { label: 'C', text: "Ask another group member to check on them" },
-      { label: 'D', text: "Remind the group that covenant community requires showing up" },
+      { label: 'B', text: "Reach out personally, find out what's going on, and make a plan together" },
+      { label: 'C', text: "Ask someone else close to them to check in" },
+      { label: 'D', text: "Remind them that covenant community requires showing up" },
     ],
   },
   // Q14 — treasure (3 T's)
   {
     number: 14,
-    text: "When it comes to your giving to the local church, you:",
+    text: "When it comes to your giving to the local church, which is most true?",
     options: [
-      { label: 'A', text: "Tithe consistently first, then give offerings beyond that when led" },
-      { label: 'B', text: "Give what feels right in the moment" },
-      { label: 'C', text: "Give when the church appears to be in financial need" },
-      { label: 'D', text: "Give a fixed amount regardless of income changes" },
+      { label: 'A', text: "I tithe first, then give offerings on top of that when I'm led" },
+      { label: 'B', text: "I give what feels right in the moment" },
+      { label: 'C', text: "I give more when the church seems to be in need" },
+      { label: 'D', text: "I give a set amount regardless of what my income does" },
     ],
   },
   // Q15 — available (Character / FAT)
   {
     number: 15,
-    text: "A leader you respect is implementing a plan you disagree with. You:",
+    text: "A leader you respect makes a decision you disagree with. What do you do?",
     options: [
-      { label: 'A', text: "Raise your concerns privately, then fully support the decision once it's made" },
-      { label: 'B', text: "Express your disagreement openly in the team meeting" },
+      { label: 'A', text: "Bring your concerns to them privately, then fully support the decision once it's made" },
+      { label: 'B', text: "Say what you think openly in the room" },
       { label: 'C', text: "Go along with it without saying anything" },
-      { label: 'D', text: "Do your part but privately hold your position" },
+      { label: 'D', text: "Do your part but hold your position privately" },
     ],
   },
   // Q16 — faithful (Character / FAT)
   {
     number: 16,
-    text: "Acts 2:42 says they devoted themselves to prayer. Which best describes your current prayer life?",
+    text: "Acts 2:42 says they devoted themselves to prayer. Be honest — which best describes your prayer life right now?",
     options: [
-      { label: 'A', text: "I pray occasionally when something feels urgent" },
-      { label: 'B', text: "Prayer is not my strongest discipline — I rely more on the Word" },
-      { label: 'C', text: "I try to pray consistently but often don't complete what I commit to" },
-      { label: 'D', text: "Prayer is a structured, daily discipline — I have set times and I keep them" },
+      { label: 'A', text: "I pray when something urgent comes up" },
+      { label: 'B', text: "Prayer isn't my strongest discipline — I lean more on the Word" },
+      { label: 'C', text: "I try to be consistent but I don't always follow through on what I commit to" },
+      { label: 'D', text: "Prayer is a daily, structured discipline — I have set times and I keep them" },
     ],
   },
   // Q17 — discipleship (Comprehension)
   {
     number: 17,
-    text: "The most important factor in raising up a disciple is:",
+    text: "What's the most important thing when raising up a disciple?",
     options: [
-      { label: 'A', text: "Giving them responsibility and walking alongside them as they learn" },
-      { label: 'B', text: "Making sure they've completed all required training" },
-      { label: 'C', text: "Waiting for consistent character before investing heavily" },
-      { label: 'D', text: "Starting with vision — if they catch it, skills will follow" },
+      { label: 'A', text: "Give them real responsibility and walk alongside them as they grow" },
+      { label: 'B', text: "Make sure they've completed all the required training" },
+      { label: 'C', text: "Wait for consistent character before investing heavily" },
+      { label: 'D', text: "Start with vision — if they catch it, the skills will follow" },
     ],
   },
   // Q18 — teachable (Character / FAT)
   {
     number: 18,
-    text: "Your pastor or mentor points out a blind spot in your character. You:",
+    text: "Your pastor or mentor calls out a blind spot in your character. How do you respond?",
     options: [
-      { label: 'A', text: "Receive it, create an accountability structure, and report back" },
-      { label: 'B', text: "Appreciate it but feel it doesn't fully reflect the picture" },
-      { label: 'C', text: "Feel defensive internally but say the right thing" },
-      { label: 'D', text: "Thank them and adjust gradually over time" },
+      { label: 'A', text: "Receive it, build accountability around it, and report back" },
+      { label: 'B', text: "Appreciate it but feel like it doesn't tell the whole story" },
+      { label: 'C', text: "Feel defensive on the inside but say the right thing" },
+      { label: 'D', text: "Thank them and make gradual adjustments over time" },
     ],
   },
   // Q19 — outreach (Competency)
   {
     number: 19,
-    text: "The last time you intentionally shared your faith with someone outside the church was:",
+    text: "When was the last time you intentionally shared your faith with someone outside the church?",
     options: [
       { label: 'A', text: "This week" },
       { label: 'B', text: "This month" },
       { label: 'C', text: "A few months ago" },
-      { label: 'D', text: "I'm not sure" },
+      { label: 'D', text: "Honestly, I'm not sure" },
     ],
   },
   // Q20 — available (Character / FAT)
   {
     number: 20,
-    text: "Someone on your ministry team is consistently not pulling their weight. You:",
+    text: "Someone on your ministry team keeps not pulling their weight. What do you do?",
     options: [
-      { label: 'A', text: "Absorb the extra work to keep things moving" },
-      { label: 'B', text: "Bring it up privately and set clear expectations together" },
+      { label: 'A', text: "Pick up the slack yourself to keep things moving" },
+      { label: 'B', text: "Pull them aside privately and set clear expectations together" },
       { label: 'C', text: "Address it in front of the team so everyone hears the standard" },
-      { label: 'D', text: "Escalate it to leadership immediately" },
+      { label: 'D', text: "Take it straight to leadership" },
     ],
   },
   // Q21 — time_god (3 T's / Time)
   {
     number: 21,
-    text: "Acts 2:42 says they devoted themselves to the breaking of bread — corporate worship and communion. When your church calls a corporate fast or prayer gathering, you:",
+    text: "Your church calls a corporate fast or prayer gathering. What do you do?",
     options: [
-      { label: 'A', text: "Participate if your schedule allows" },
-      { label: 'B', text: "Participate fully — corporate agreement carries specific spiritual weight" },
-      { label: 'C', text: "Pray intensely at home instead" },
-      { label: 'D', text: "Support it spiritually but don't always participate physically" },
+      { label: 'A', text: "Participate if my schedule allows" },
+      { label: 'B', text: "Participate fully — when the church agrees together in prayer and fasting, something moves" },
+      { label: 'C', text: "Pray hard at home instead — same thing" },
+      { label: 'D', text: "Support it spiritually but don't always show up physically" },
     ],
   },
   // Q22 — coaching (Competency)
   {
     number: 22,
-    text: "Someone you're discipling just experienced a significant failure. You:",
+    text: "Someone you're pouring into just went through a major failure. How do you handle it?",
     options: [
-      { label: 'A', text: "Give them space and wait for them to process before engaging" },
-      { label: 'B', text: "Step in immediately with correction so they learn quickly" },
+      { label: 'A', text: "Give them space to process before you engage" },
+      { label: 'B', text: "Get in there immediately with correction so they learn fast" },
       { label: 'C', text: "Ask questions to help them find the lesson themselves, then affirm and redirect" },
-      { label: 'D', text: "Share your own failure story so they feel less alone" },
+      { label: 'D', text: "Share your own failure story so they don't feel alone" },
     ],
   },
   // Q23 — treasure (3 T's)
@@ -252,10 +252,10 @@ export const S1_QUESTIONS: S1Question[] = [
     number: 23,
     text: "Time is your most limited resource. How do you steward it?",
     options: [
-      { label: 'A', text: "I schedule in order of Kingdom priority — God, family, ministry, work, rest" },
-      { label: 'B', text: "I say yes to the most important things and hope the rest works out" },
-      { label: 'C', text: "I let my energy levels guide my capacity each week" },
-      { label: 'D', text: "I delegate aggressively so I can focus on high-impact activities" },
+      { label: 'A', text: "I schedule by Kingdom priority — God, family, ministry, work, rest — in that order" },
+      { label: 'B', text: "I say yes to the most important things and trust the rest works out" },
+      { label: 'C', text: "I let my energy and capacity guide me week to week" },
+      { label: 'D', text: "I delegate hard so I can stay focused on what only I can do" },
     ],
   },
   // Q24 — coaching (Competency)
@@ -264,9 +264,9 @@ export const S1_QUESTIONS: S1Question[] = [
     text: "What makes someone ready to disciple others?",
     options: [
       { label: 'A', text: "They've completed all the required church tracks" },
-      { label: 'B', text: "They can identify what God is doing in someone and consistently draw it out" },
-      { label: 'C', text: "They've been a believer for at least 3 years" },
-      { label: 'D', text: "They've been personally discipled and can replicate the process" },
+      { label: 'B', text: "They can see what God is doing in someone and consistently draw it out" },
+      { label: 'C', text: "They've been saved long enough to have something to give" },
+      { label: 'D', text: "They've been discipled themselves and can replicate the process" },
     ],
   },
 ];
