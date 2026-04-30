@@ -88,16 +88,16 @@ export function scoreAnimals(answers: S2Answers): AnimalResult {
 // ─── S3: LOVE LANGUAGES ───────────────────────────────────────────────────────
 
 const LL_KEY: Record<number, { A: string; B: string }> = {
-  25: { A:'words', B:'touch'  }, 26: { A:'time',  B:'acts'   },
-  27: { A:'gifts', B:'words'  }, 28: { A:'acts',  B:'touch'  },
-  29: { A:'gifts', B:'time'   }, 30: { A:'acts',  B:'gifts'  },
-  31: { A:'words', B:'time'   }, 32: { A:'touch', B:'gifts'  },
-  33: { A:'time',  B:'words'  }, 34: { A:'words', B:'acts'   },
-  35: { A:'time',  B:'touch'  }, 36: { A:'words', B:'acts'   },
-  37: { A:'gifts', B:'touch'  }, 38: { A:'acts',  B:'time'   },
-  39: { A:'gifts', B:'words'  }, 40: { A:'touch', B:'acts'   },
-  41: { A:'time',  B:'gifts'  }, 42: { A:'words', B:'touch'  },
-  43: { A:'acts',  B:'time'   }, 44: { A:'gifts', B:'acts'   },
+  25: { A:'words', B:'touch'  },
+  26: { A:'time',  B:'acts'   },
+  27: { A:'gifts', B:'time'   },
+  28: { A:'words', B:'acts'   },
+  29: { A:'touch', B:'gifts'  },
+  30: { A:'time',  B:'words'  },
+  31: { A:'acts',  B:'touch'  },
+  32: { A:'gifts', B:'time'   },
+  33: { A:'words', B:'acts'   },
+  34: { A:'touch', B:'time'   },
 };
 
 const LL_LABELS: Record<string, string> = {

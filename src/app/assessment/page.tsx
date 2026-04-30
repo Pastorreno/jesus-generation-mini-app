@@ -7,7 +7,7 @@ import type { S1Answers, S2Answers, S3Answers, S4Answers, S5Answers, S6Answers }
 
 type Step = 'intake' | 's1' | 's2' | 's3' | 's4' | 's5' | 's6' | 'submitting';
 
-interface Intake { name: string; email: string; phone: string; telegram: string; }
+interface Intake { name: string; email: string; phone: string; telegram: string; city: string; state: string; role: string; church_name: string; }
 
 const STORAGE_KEY = 'ets_assessment_v2';
 const save = (d: object) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} };
@@ -26,7 +26,7 @@ export default function AssessmentPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>('intake');
   const [telegramId, setTelegramId] = useState<number | null>(null);
-  const [intake, setIntake] = useState<Intake>({ name: '', email: '', phone: '', telegram: '' });
+  const [intake, setIntake] = useState<Intake>({ name: '', email: '', phone: '', telegram: '', city: '', state: '', role: '', church_name: '' });
   const [s1, setS1] = useState<S1Answers>({});
   const [s2, setS2] = useState<S2Answers>({});
   const [s3, setS3] = useState<S3Answers>({});
@@ -42,11 +42,11 @@ export default function AssessmentPage() {
     const tgUsername = params.get('username');
     if (tgId) {
       setTelegramId(Number(tgId));
-      setIntake({ name: tgName ? decodeURIComponent(tgName) : '', email: '', phone: '', telegram: tgUsername ? decodeURIComponent(tgUsername) : '' });
+      setIntake({ name: tgName ? decodeURIComponent(tgName) : '', email: '', phone: '', telegram: tgUsername ? decodeURIComponent(tgUsername) : '', city: '', state: '', role: '', church_name: '' });
     }
     const saved = load();
     if (saved?.step && saved.step !== 'intake') {
-      setIntake(saved.intake ?? { name: '', email: '', phone: '', telegram: '' });
+      setIntake(saved.intake ?? { name: '', email: '', phone: '', telegram: '', city: '', state: '', role: '', church_name: '' });
       setS1(saved.s1 ?? {}); setS2(saved.s2 ?? {}); setS3(saved.s3 ?? {});
       setS4(saved.s4 ?? {}); setS5(saved.s5 ?? {}); setS6(saved.s6 ?? {});
       setStep(saved.step);
@@ -192,20 +192,25 @@ export default function AssessmentPage() {
 }
 
 // ─── INTAKE ───────────────────────────────────────────────────────────────────
-function IntakeStep({ values, onChange, onNext }: { values: { name: string; email: string; phone: string; telegram: string }; onChange: (v: { name: string; email: string; phone: string; telegram: string }) => void; onNext: () => void }) {
-  const valid = values.name.trim().length > 0 && values.email.trim().length > 0;
+function IntakeStep({ values, onChange, onNext }: { values: Intake; onChange: (v: Intake) => void; onNext: () => void }) {
+  const valid = values.name.trim().length > 0 && values.city.trim().length > 0 && values.role.length > 0;
+
+  const ROLES = ['Member', 'Leader', 'Pastor', 'Church Planter', 'Evangelist', 'Other'];
+
   return (
     <div>
       <p style={{ color: '#cc0000', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 }}>Before We Begin</p>
       <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Spiritual DNA Assessment</h1>
       <p style={{ color: '#666', fontSize: 13, marginBottom: 28, lineHeight: 1.7 }}>
-        6 sections. ~15 minutes. Built on Acts 2:42-47, the Great Commission, and Acts 1:8. This is a mirror — be honest.
+        6 sections · ~15 minutes · Built on Acts 2:42-47, the Great Commission, and Acts 1:8.
       </p>
-      {(['name','email','phone','telegram'] as const).map(k => (
+
+      {/* Name */}
+      {(['name','email','phone'] as const).map(k => (
         <div key={k} style={{ marginBottom: 14 }}>
-          <label style={{ color: '#aaa', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6, textTransform: 'capitalize' }}>
-            {k === 'telegram' ? 'Telegram Username' : k === 'phone' ? 'Phone (optional)' : k.charAt(0).toUpperCase() + k.slice(1)}
-            {(k === 'name' || k === 'email') && <span style={{ color: '#cc0000' }}> *</span>}
+          <label style={{ color: '#aaa', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+            {k === 'phone' ? 'Phone (optional)' : k.charAt(0).toUpperCase() + k.slice(1)}
+            {k === 'name' && <span style={{ color: '#cc0000' }}> *</span>}
           </label>
           <input
             type={k === 'email' ? 'email' : k === 'phone' ? 'tel' : 'text'}
@@ -215,6 +220,39 @@ function IntakeStep({ values, onChange, onNext }: { values: { name: string; emai
           />
         </div>
       ))}
+
+      {/* Location */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+        <div>
+          <label style={{ color: '#aaa', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>City <span style={{ color: '#cc0000' }}>*</span></label>
+          <input value={values.city} onChange={e => onChange({ ...values, city: e.target.value })} placeholder="Your city" style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', color: '#fff', fontSize: 15, boxSizing: 'border-box', outline: 'none' }} />
+        </div>
+        <div>
+          <label style={{ color: '#aaa', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>State</label>
+          <input value={values.state} onChange={e => onChange({ ...values, state: e.target.value })} placeholder="State" style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', color: '#fff', fontSize: 15, boxSizing: 'border-box', outline: 'none' }} />
+        </div>
+      </div>
+
+      {/* Role */}
+      <div style={{ marginBottom: 14 }}>
+        <label style={{ color: '#aaa', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 8 }}>Your Role <span style={{ color: '#cc0000' }}>*</span></label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {ROLES.map(r => (
+            <button key={r} onClick={() => onChange({ ...values, role: r })} style={{ padding: '10px 8px', background: values.role === r ? '#cc0000' : '#111', border: `1px solid ${values.role === r ? '#cc0000' : '#2a2a2a'}`, borderRadius: 8, color: values.role === r ? '#fff' : '#888', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Church name — show if not just a member */}
+      {values.role && values.role !== 'Member' && (
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ color: '#aaa', fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>Church / Ministry Name</label>
+          <input value={values.church_name} onChange={e => onChange({ ...values, church_name: e.target.value })} placeholder="Name of your church or ministry" style={{ width: '100%', background: '#111', border: '1px solid #2a2a2a', borderRadius: 10, padding: '13px 16px', color: '#fff', fontSize: 15, boxSizing: 'border-box', outline: 'none' }} />
+        </div>
+      )}
+
       <button onClick={onNext} disabled={!valid} style={{ width: '100%', padding: 16, marginTop: 8, background: valid ? '#cc0000' : '#1a1a1a', color: valid ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: valid ? 'pointer' : 'not-allowed' }}>
         Begin Assessment →
       </button>
@@ -309,6 +347,8 @@ function PairSection({ title, subtitle, questions, answers, onAnswer, onNext }: 
                   border: `2px solid ${sel === opt ? '#cc0000' : '#1e1e1e'}`,
                   borderRadius: 12, color: sel === opt ? '#fff' : '#999',
                   fontSize: 14, cursor: 'pointer', lineHeight: 1.6,
+                  WebkitTapHighlightColor: 'transparent',
+                  transition: 'border-color 0.1s, background 0.1s',
                 }}
               >
                 {opt === 'A' ? q.optionA : q.optionB}

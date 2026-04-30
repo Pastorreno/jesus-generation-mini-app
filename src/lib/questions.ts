@@ -102,26 +102,16 @@ export interface S3Question {
 }
 
 export const S3_QUESTIONS: S3Question[] = [
-  { number: 25, optionA: "I love receiving notes of affirmation.", optionB: "I love being hugged." },
-  { number: 26, optionA: "I love spending quality one-on-one time with people I care about.", optionB: "I feel loved when people help me out." },
-  { number: 27, optionA: "Receiving a meaningful gift makes me feel truly loved.", optionB: "I feel most loved when someone speaks well of me." },
-  { number: 28, optionA: "I feel cared for when people help me with tasks.", optionB: "A loving touch — a hug or hand on the shoulder — means a lot to me." },
-  { number: 29, optionA: "I feel closest to someone after receiving a thoughtful gift.", optionB: "Undivided attention from someone is the deepest expression of love." },
-  { number: 30, optionA: "I feel most loved when someone rolls up their sleeves and helps.", optionB: "Receiving a special, unexpected gift speaks volumes to me." },
-  { number: 31, optionA: "Kind, affirming words mean more to me than actions.", optionB: "Focused, uninterrupted time means more to me than words." },
-  { number: 32, optionA: "Being touched warmly — a hug or pat on the back — tells me I'm loved.", optionB: "A personal, meaningful gift tells me I'm valued." },
-  { number: 33, optionA: "Being given someone's full, undivided attention makes me feel deeply loved.", optionB: "Hearing 'I appreciate you' or 'I'm proud of you' goes a long way." },
-  { number: 34, optionA: "Specific, sincere compliments are what I treasure most.", optionB: "I feel loved when someone does something helpful without being asked." },
-  { number: 35, optionA: "I feel most connected when we're spending time focused on each other.", optionB: "A gentle touch communicates warmth in a way words can't." },
-  { number: 36, optionA: "Words of encouragement lift me more than anything else.", optionB: "When someone serves me, I feel deeply loved." },
-  { number: 37, optionA: "I feel loved when someone brings me something meaningful.", optionB: "Physical closeness — sitting together, a hand on the shoulder — speaks deeply to me." },
-  { number: 38, optionA: "When someone sets aside time specifically for me, I feel most valued.", optionB: "Acts of service — someone helping me — mean more to me than words." },
-  { number: 39, optionA: "A well-chosen gift shows someone truly knows me.", optionB: "Hearing genuine affirmation changes how I feel." },
-  { number: 40, optionA: "Physical affirmation — a hug, being close — speaks love to me.", optionB: "Being helped or served shows me someone cares." },
-  { number: 41, optionA: "Uninterrupted, focused time is what I treasure most in relationships.", optionB: "A meaningful, thoughtful gift stays with me." },
-  { number: 42, optionA: "I feel most loved when someone speaks encouraging, specific words over me.", optionB: "Being held or touched warmly communicates love deeply." },
-  { number: 43, optionA: "I feel most loved when someone takes something off my plate without being asked.", optionB: "Being together with someone's full attention makes me feel closest." },
-  { number: 44, optionA: "A thoughtful gift, even small, tells me I was thought of.", optionB: "When someone helps me practically, I know they love me." },
+  { number: 25, optionA: "Hearing someone say 'I'm proud of you' or 'I appreciate you' means everything to me.", optionB: "A warm hug or someone being physically close tells me I'm loved." },
+  { number: 26, optionA: "Someone giving me their full, undivided attention makes me feel deeply valued.", optionB: "When someone helps me with something without being asked, I feel cared for." },
+  { number: 27, optionA: "A thoughtful, meaningful gift — even something small — shows me someone was thinking about me.", optionB: "Spending focused, uninterrupted time with someone I care about is what I treasure most." },
+  { number: 28, optionA: "Words of encouragement lift me more than anything else someone can do.", optionB: "Someone rolling up their sleeves and helping me out speaks louder than words." },
+  { number: 29, optionA: "Physical closeness — a hand on the shoulder, sitting together — communicates love in a way words can't.", optionB: "A well-chosen gift tells me someone truly knows me." },
+  { number: 30, optionA: "I feel most connected to someone when we're spending quality time focused on each other.", optionB: "Specific, sincere compliments stay with me longer than almost anything." },
+  { number: 31, optionA: "When someone takes something off my plate without being asked, I know they love me.", optionB: "Being held or touched warmly — a hug, a pat on the back — communicates love deeply." },
+  { number: 32, optionA: "Receiving an unexpected, meaningful gift makes me feel truly seen.", optionB: "Someone setting aside time specifically for me makes me feel most valued." },
+  { number: 33, optionA: "Kind, affirming words mean more to me than actions.", optionB: "Acts of service — someone helping me practically — mean more to me than words." },
+  { number: 34, optionA: "Physical affirmation — being close, a gentle touch — speaks love to me.", optionB: "Focused, uninterrupted time with someone is the deepest expression of love I know." },
 ];
 
 // ─── SECTION 4: SPIRITUAL GIFTS (Forced-choice pairs) ────────────────────────
