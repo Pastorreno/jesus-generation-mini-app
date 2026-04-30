@@ -127,11 +127,12 @@ export default function AssessmentPage() {
             answers={s1}
             onAnswer={(num, val) => setS1(p => ({ ...p, [num]: val as 1|2|3|4|5 }))}
             onNext={() => setStep('s2')}
+            onBack={() => setStep('intake')}
           />
         )}
 
         {step === 's2' && (
-          <S2Step answers={s2} onChange={setS2} onNext={() => setStep('s3')} />
+          <S2Step answers={s2} onChange={setS2} onNext={() => setStep('s3')} onBack={() => setStep('s1')} />
         )}
 
         {step === 's3' && (
@@ -142,6 +143,7 @@ export default function AssessmentPage() {
             answers={s3}
             onAnswer={(num, val) => setS3(p => ({ ...p, [num]: val as 'A'|'B' }))}
             onNext={() => setStep('s4')}
+            onBack={() => setStep('s2')}
           />
         )}
 
@@ -153,6 +155,7 @@ export default function AssessmentPage() {
             answers={s4}
             onAnswer={(num, val) => setS4(p => ({ ...p, [num]: val as 'A'|'B' }))}
             onNext={() => setStep('s5')}
+            onBack={() => setStep('s3')}
           />
         )}
 
@@ -164,6 +167,7 @@ export default function AssessmentPage() {
             answers={s5}
             onAnswer={(num, val) => setS5(p => ({ ...p, [num]: val as 'A'|'B' }))}
             onNext={() => setStep('s6')}
+            onBack={() => setStep('s4')}
           />
         )}
 
@@ -175,6 +179,7 @@ export default function AssessmentPage() {
             answers={s6}
             onAnswer={(num, val) => setS6(p => ({ ...p, [num]: val as 1|2|3|4|5 }))}
             onNext={handleSubmit}
+            onBack={() => setStep('s5')}
             isLast
           />
         )}
@@ -261,12 +266,13 @@ function IntakeStep({ values, onChange, onNext }: { values: Intake; onChange: (v
 }
 
 // ─── LIKERT SECTION ───────────────────────────────────────────────────────────
-function LikertSection({ title, subtitle, items, answers, onAnswer, onNext, isLast }: {
+function LikertSection({ title, subtitle, items, answers, onAnswer, onNext, onBack, isLast }: {
   title: string; subtitle: string;
   items: { number: number; text: string }[];
   answers: Record<number, number>;
   onAnswer: (num: number, val: number) => void;
   onNext: () => void;
+  onBack?: () => void;
   isLast?: boolean;
 }) {
   const answered = items.filter(i => answers[i.number]).length;
@@ -303,11 +309,14 @@ function LikertSection({ title, subtitle, items, answers, onAnswer, onNext, isLa
         );
       })}
 
-      <div style={{ position: 'sticky', bottom: 16 }}>
+      <div style={{ position: 'sticky', bottom: 16, display: 'flex', gap: 10 }}>
+        {onBack && (
+          <button onClick={onBack} style={{ padding: '16px 20px', background: '#111', color: '#555', border: '1px solid #2a2a2a', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>← Back</button>
+        )}
         <button
           onClick={onNext}
           disabled={!allDone}
-          style={{ width: '100%', padding: 16, background: allDone ? '#cc0000' : '#1a1a1a', color: allDone ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allDone ? 'pointer' : 'not-allowed' }}
+          style={{ flex: 1, padding: 16, background: allDone ? '#cc0000' : '#1a1a1a', color: allDone ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allDone ? 'pointer' : 'not-allowed' }}
         >
           {isLast ? 'Submit Assessment →' : `Continue → (${answered}/${items.length})`}
         </button>
@@ -317,12 +326,13 @@ function LikertSection({ title, subtitle, items, answers, onAnswer, onNext, isLa
 }
 
 // ─── PAIR SECTION (S3/S4/S5) ─────────────────────────────────────────────────
-function PairSection({ title, subtitle, questions, answers, onAnswer, onNext }: {
+function PairSection({ title, subtitle, questions, answers, onAnswer, onNext, onBack }: {
   title: string; subtitle: string;
   questions: { number: number; optionA: string; optionB: string }[];
   answers: Record<number, string>;
   onAnswer: (num: number, val: string) => void;
   onNext: () => void;
+  onBack?: () => void;
 }) {
   const answered = questions.filter(q => answers[q.number]).length;
   const allDone = answered === questions.length;
@@ -358,11 +368,14 @@ function PairSection({ title, subtitle, questions, answers, onAnswer, onNext }: 
         );
       })}
 
-      <div style={{ position: 'sticky', bottom: 16 }}>
+      <div style={{ position: 'sticky', bottom: 16, display: 'flex', gap: 10 }}>
+        {onBack && (
+          <button onClick={onBack} style={{ padding: '16px 20px', background: '#111', color: '#555', border: '1px solid #2a2a2a', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>← Back</button>
+        )}
         <button
           onClick={onNext}
           disabled={!allDone}
-          style={{ width: '100%', padding: 16, background: allDone ? '#cc0000' : '#1a1a1a', color: allDone ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allDone ? 'pointer' : 'not-allowed' }}
+          style={{ flex: 1, padding: 16, background: allDone ? '#cc0000' : '#1a1a1a', color: allDone ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allDone ? 'pointer' : 'not-allowed' }}
         >
           {`Continue → (${answered}/${questions.length})`}
         </button>
@@ -372,7 +385,7 @@ function PairSection({ title, subtitle, questions, answers, onAnswer, onNext }: 
 }
 
 // ─── S2 ANIMAL RANKING ────────────────────────────────────────────────────────
-function S2Step({ answers, onChange, onNext }: { answers: S2Answers; onChange: (a: S2Answers) => void; onNext: () => void }) {
+function S2Step({ answers, onChange, onNext, onBack }: { answers: S2Answers; onChange: (a: S2Answers) => void; onNext: () => void; onBack?: () => void }) {
   const allFilled = S2_ROWS.every(r => {
     const a = answers[r.rowNumber];
     if (!a) return false;
@@ -415,9 +428,14 @@ function S2Step({ answers, onChange, onNext }: { answers: S2Answers; onChange: (
         </div>
       ))}
 
-      <button onClick={onNext} disabled={!allFilled} style={{ width: '100%', padding: 16, marginTop: 8, background: allFilled ? '#cc0000' : '#1a1a1a', color: allFilled ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allFilled ? 'pointer' : 'not-allowed' }}>
-        Continue →
-      </button>
+      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+        {onBack && (
+          <button onClick={onBack} style={{ padding: '16px 20px', background: '#111', color: '#555', border: '1px solid #2a2a2a', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>← Back</button>
+        )}
+        <button onClick={onNext} disabled={!allFilled} style={{ flex: 1, padding: 16, background: allFilled ? '#cc0000' : '#1a1a1a', color: allFilled ? '#fff' : '#444', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: allFilled ? 'pointer' : 'not-allowed' }}>
+          Continue →
+        </button>
+      </div>
     </div>
   );
 }
