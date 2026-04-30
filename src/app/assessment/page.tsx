@@ -406,27 +406,35 @@ function S2Step({ answers, onChange, onNext, onBack }: { answers: S2Answers; onC
         For each row, rank all four words: <strong style={{ color: '#aaa' }}>4 = Most Like Me</strong> down to <strong style={{ color: '#aaa' }}>1 = Least Like Me</strong>. Use each number once per row.
       </p>
 
-      {S2_ROWS.map(row => (
-        <div key={row.rowNumber} style={{ marginBottom: 12, padding: '14px 12px', background: '#111', borderRadius: 12, border: '1px solid #1e1e1e' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
-            {cols.map(col => (
-              <div key={col} style={{ textAlign: 'center' }}>
-                <p style={{ color: '#ddd', fontSize: 12, marginBottom: 8, lineHeight: 1.3, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {row[col]}
-                </p>
-                <select
-                  value={answers[row.rowNumber]?.[col] || ''}
-                  onChange={e => setRank(row.rowNumber, col, Number(e.target.value))}
-                  style={{ width: '100%', background: '#0a0a0a', border: `1px solid ${answers[row.rowNumber]?.[col] ? '#cc000066' : '#2a2a2a'}`, borderRadius: 6, padding: '8px 4px', color: answers[row.rowNumber]?.[col] ? '#fff' : '#555', fontSize: 15, textAlign: 'center' }}
-                >
-                  <option value="">—</option>
-                  {[4,3,2,1].map(v => <option key={v} value={v}>{v}</option>)}
-                </select>
-              </div>
-            ))}
+      {S2_ROWS.map(row => {
+        const a = answers[row.rowNumber] ?? { lion:0, otter:0, gr:0, beaver:0 };
+        const usedVals = new Set(Object.values(a).filter(v => v > 0));
+        return (
+          <div key={row.rowNumber} style={{ marginBottom: 12, padding: '14px 12px', background: '#111', borderRadius: 12, border: '1px solid #1e1e1e' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+              {cols.map(col => (
+                <div key={col} style={{ textAlign: 'center' }}>
+                  <p style={{ color: '#ddd', fontSize: 12, marginBottom: 8, lineHeight: 1.3, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {row[col]}
+                  </p>
+                  <select
+                    value={a[col] || ''}
+                    onChange={e => setRank(row.rowNumber, col, Number(e.target.value))}
+                    style={{ width: '100%', background: '#0a0a0a', border: `1px solid ${a[col] ? '#cc000066' : '#2a2a2a'}`, borderRadius: 6, padding: '8px 4px', color: a[col] ? '#fff' : '#555', fontSize: 15, textAlign: 'center' }}
+                  >
+                    <option value="">—</option>
+                    {[4,3,2,1].map(v => (
+                      <option key={v} value={v} disabled={usedVals.has(v) && a[col] !== v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         {onBack && (
