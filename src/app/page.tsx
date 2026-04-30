@@ -61,6 +61,14 @@ export default function Page() {
     const user = tg.initDataUnsafe?.user;
     if (!user?.id) { setLoading(false); return; }
     setTgUser(user);
+
+    // Capture identity immediately — fire and forget
+    fetch('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telegram_id: user.id, first_name: user.first_name, username: user.username ?? '' }),
+    }).catch(() => {});
+
     fetch(`/api/profile?user_id=${user.id}`)
       .then(r => r.json())
       .then((d: { profile?: Profile }) => setProfile(
