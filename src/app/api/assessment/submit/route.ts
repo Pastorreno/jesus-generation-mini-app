@@ -115,7 +115,7 @@ No filler. No generic encouragement. Make it feel written specifically for this 
 
 export async function POST(req: NextRequest) {
   const { intake, s1Answers, s2Answers, s3Answers, s4Answers, s5Answers, s6Answers, telegram_user_id } = await req.json() as {
-    intake: { name: string; email: string; phone: string; telegram: string };
+    intake: { name: string; email: string; phone: string; telegram: string; city?: string; state?: string; role?: string; church_name?: string };
     s1Answers: S1Answers; s2Answers: S2Answers; s3Answers: S3Answers;
     s4Answers?: S4Answers; s5Answers?: S5Answers; s6Answers?: S6Answers;
     telegram_user_id?: number;
@@ -150,6 +150,10 @@ export async function POST(req: NextRequest) {
       email: intake.email.trim() || null,
       phone: intake.phone.trim() || null,
       telegram_user_id: telegram_user_id ?? null,
+      city: intake.city?.trim() || null,
+      state: intake.state?.trim() || null,
+      role: intake.role || null,
+      church_name: intake.church_name?.trim() || null,
 
       lps_score: s1Result.lps,
       pipeline_level: level.level,

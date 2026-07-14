@@ -17,7 +17,6 @@ import {
 } from '@/lib/assessment/session';
 import { scoreAndSaveProfile, getProfile, generateDevelopmentPlan } from '@/lib/assessment/scoring';
 import { compareGrowth } from '@/lib/regression';
-import { syncProfileToNotion } from '@/lib/notion';
 import { recordCoachingResponse, checkForCrisis } from '@/lib/coaching';
 import {
   sendWelcome,
@@ -155,6 +154,63 @@ export async function POST(req: NextRequest) {
         console.error('Vision error:', msg);
         await sendMessage(chat_id, `✅ Photo saved! (Vision analysis unavailable: ${msg.slice(0, 100)})`);
       }
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── PDF LESSON UPLOAD (admin only) ────────────────────
+    // Caption format: "Series Name | Lesson N | Title"
+    // Example: "Foundation Series | Lesson 1 | The Kingdom Mandate"
+    if (message.document && message.document.mime_type === 'application/pdf') {
+      const adminCheck = ADMIN_IDS.includes(message.from?.id);
+      if (!adminCheck) {
+        await sendMessage(message.chat.id, `⛔ Only admins can upload lessons.`);
+        return NextResponse.json({ ok: true });
+      }
+      const doc = message.document;
+      const caption = (message.caption || '').trim();
+      const parts = caption.split('|').map((s: string) => s.trim());
+      const series = parts[0] || 'General';
+      const lessonNum = parts[1] ? parseInt(parts[1].replace(/\D/g, '')) || null : null;
+      const title = parts[2] || doc.file_name || 'Untitled Lesson';
+
+      const { createClient: createSB } = await import('@supabase/supabase-js');
+      const sb = createSB(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+
+      // Save to DB
+      const { data: lesson } = await sb.from('lessons').insert({
+        series,
+        title,
+        lesson_number: lessonNum,
+        file_id: doc.file_id,
+        file_name: doc.file_name,
+        posted_by: message.from.id,
+      }).select().single();
+
+      // Post to ETS channel
+      const channelId = process.env.TELEGRAM_ETS_CHANNEL_ID;
+      if (channelId) {
+        const channelMsg = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: channelId,
+            document: doc.file_id,
+            caption: `📖 *${series}*\n${lessonNum ? `Lesson ${lessonNum}: ` : ''}*${title}*\n\nTap to open and study 👇`,
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '📚 Open Lesson Library', url: `${APP_URL}?tab=lessons` },
+              ]],
+            },
+          }),
+        }).then(r => r.json()) as { ok: boolean; result?: { message_id: number } };
+
+        if (channelMsg.ok && lesson) {
+          await sb.from('lessons').update({ channel_message_id: channelMsg.result!.message_id }).eq('id', lesson.id);
+        }
+      }
+
+      await sendMessage(message.chat.id, `✅ *${title}* uploaded to ETS Academy${channelId ? ' and posted to the channel' : ''}.`);
       return NextResponse.json({ ok: true });
     }
 
@@ -493,6 +549,57 @@ RULES:
       return NextResponse.json({ ok: true });
     }
 
+    // ── /pinapp — admin only, pins Web App button to ETS channel ──
+    if (text.startsWith('/pinapp')) {
+      if (!hasRole(userRole, 'admin')) {
+        await sendMessage(chat_id, `⛔ You don't have permission to use that command.`);
+        return NextResponse.json({ ok: true });
+      }
+      const channelId = process.env.TELEGRAM_ETS_CHANNEL_ID;
+      if (!channelId) {
+        await sendMessage(chat_id, `⚠️ TELEGRAM_ETS_CHANNEL_ID is not set.`);
+        return NextResponse.json({ ok: true });
+      }
+      // Post the launch message with Web App button to the channel
+      const postRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: Number(channelId),
+          text: `🔥 *ETS Academy — Leadership Dashboard*\n\nTake your Kingdom Mandate Assessment, get your leadership profile, and unlock your 90-day growth plan.\n\nTap below to open your dashboard 👇`,
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '📊 Open ETS Academy', web_app: { url: APP_URL } },
+            ]],
+          },
+        }),
+      }).then(r => r.json()) as { ok: boolean; result?: { message_id: number }; description?: string };
+
+      if (!postRes.ok) {
+        await sendMessage(chat_id, `⚠️ Couldn't post to channel: ${postRes.description}\n\nMake sure I'm an admin with "Post Messages" permission.`, { parse_mode: null });
+        return NextResponse.json({ ok: true });
+      }
+
+      // Pin the message
+      const pinRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/pinChatMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: Number(channelId),
+          message_id: postRes.result!.message_id,
+          disable_notification: true,
+        }),
+      }).then(r => r.json()) as { ok: boolean; description?: string };
+
+      if (pinRes.ok) {
+        await sendMessage(chat_id, `✅ ETS Academy button posted and pinned to the channel.`);
+      } else {
+        await sendMessage(chat_id, `✅ Posted to channel, but couldn't pin: ${pinRes.description}\n\nGive me "Pin Messages" permission and try again.`, { parse_mode: null });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     // ── /promote — admin only ──────────────────────────────
     if (text.startsWith('/promote')) {
       if (!hasRole(userRole, 'admin')) {
@@ -539,7 +646,7 @@ RULES:
       }
       await sendMessage(
         chat_id,
-        `👑 *Admin Panel*\n\n*Role commands:*\n/promote <id> <role> — change a user's role\n/myrole — check your role\n/reset <id> — reset assessment\n\n*Channel commands:*\n/announce <message> — post to ETS Academy channel\n\n*AI commands:*\n/local <prompt> — ask your local Mac AI\n\n*Roles:* visitor → member → staff → admin`,
+        `👑 *Admin Panel*\n\n*Role commands:*\n/promote <id> <role> — change a user's role\n/myrole — check your role\n/reset <id> — reset assessment\n\n*Channel commands:*\n/announce <message> — post to ETS Academy channel\n/pinapp — pin the ETS Academy app button to the channel\n\n*AI commands:*\n/local <prompt> — ask your local Mac AI\n\n*Roles:* visitor → member → staff → admin`,
         {
           reply_markup: {
             inline_keyboard: [[
@@ -744,7 +851,6 @@ RULES:
       if (isComplete) {
         await sendProcessingMessage(chat_id, first_name);
         const profile = await scoreAndSaveProfile(user_id, first_name, username, updated.answers);
-        syncProfileToNotion(profile).catch(err => console.error('Notion sync error:', err));
         await markComplete(user_id);
         await setRole(user_id, first_name, username, 'member', user_id);
         await sendProfileResult(chat_id, profile);
