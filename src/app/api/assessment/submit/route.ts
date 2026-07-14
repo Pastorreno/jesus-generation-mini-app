@@ -239,6 +239,28 @@ export async function POST(req: NextRequest) {
 
     notifyGroup(intake.name.trim(), memberSlug, level.level, level.name, s1Result.lps).catch(console.error);
 
+    // Trigger n8n Mac Mini Watchdog & Visual Scorecard Generator
+    const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || 'https://bridge.macminhub.com/webhook/spiritual-dna-assessment';
+    fetch(n8nWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: intake.name.trim(),
+        leader_id: memberSlug,
+        telegram_user_id: telegram_user_id || null,
+        level_name: `Level ${level.level} — ${level.name}`,
+        lps_score: s1Result.lps,
+        character_score: s1Result.character,
+        competency_score: s1Result.competency,
+        comprehension_score: s1Result.comprehension,
+        eq_score: eq?.overall ?? 0,
+        animal_primary: animals.primary,
+        gift_primary: gifts?.primary ?? '',
+        gift_secondary: gifts?.secondary ?? '',
+        calling_direction: `Assigned to Level ${level.level} (${level.name}).`,
+      }),
+    }).catch(err => console.error('n8n trigger error:', err));
+
     syncToSheets({
       name: intake.name.trim(), email: intake.email.trim() || null, phone: intake.phone.trim() || null,
       level: level.level, levelName: level.name, lps: s1Result.lps,
