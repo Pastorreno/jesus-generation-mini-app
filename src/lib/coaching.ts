@@ -150,7 +150,54 @@ Return ONLY the message text. No JSON. No labels. Just the message.`;
 }
 
 // ─────────────────────────────────────────────
-// SEND coaching message to one member
+// SEND coaching message via iMessage/SMS bridge
+// ─────────────────────────────────────────────
+async function sendIMessage(to: string, body: string): Promise<boolean> {
+  const bridgeUrl = process.env.MINI_BRIDGE_URL || 'https://bridge.macminhub.com';
+  const token = process.env.BRIDGE_TOKEN;
+  if (!token) {
+    console.error('sendIMessage failed: BRIDGE_TOKEN not set');
+    return false;
+  }
+  
+  const safeBody = body.replace(/"/g, '\\"');
+  const safeTo = to.replace(/"/g, '\\"');
+  
+  let target = `buddy "${safeTo}"`;
+  if (to.includes(';') && (to.startsWith('iMessage') || to.startsWith('SMS') || to.startsWith('RCS'))) {
+    target = `chat id "${safeTo}"`;
+  }
+  
+  const script = `osascript <<'APPLESCRIPT'
+tell application "Messages"
+    send "${safeBody}" to ${target}
+end tell
+APPLESCRIPT`;
+
+  try {
+    const res = await fetch(`${bridgeUrl}/run`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ command: script, cwd: '~' }),
+    });
+    const data = await res.json() as { ok?: boolean; error?: string };
+    if (data.ok) {
+      console.log(`iMessage check-in sent to ${to}`);
+      return true;
+    }
+    console.error(`sendIMessage bridge error:`, data.error || data);
+    return false;
+  } catch (err) {
+    console.error('sendIMessage request failed:', err);
+    return false;
+  }
+}
+
+// ─────────────────────────────────────────────
+// SEND coaching message to one member (SMS/iMessage if phone exists, fallback to Telegram)
 // ─────────────────────────────────────────────
 async function sendCoachingMessage(
   telegram_user_id: number,
@@ -158,7 +205,28 @@ async function sendCoachingMessage(
   weekNumber: number,
   message: string
 ): Promise<void> {
-  await sendMessage(telegram_user_id, message);
+  let sentViaSms = false;
+  
+  try {
+    const { data: user } = await getSupabaseClient()
+      .from('users')
+      .select('phone')
+      .eq('telegram_id', telegram_user_id)
+      .maybeSingle();
+      
+    if (user?.phone) {
+      const success = await sendIMessage(user.phone, message);
+      if (success) {
+        sentViaSms = true;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to check user phone or send iMessage check-in:', err);
+  }
+  
+  if (!sentViaSms) {
+    await sendMessage(telegram_user_id, message);
+  }
 
   // Log it
   await getSupabaseClient().from('coaching_log').insert({
